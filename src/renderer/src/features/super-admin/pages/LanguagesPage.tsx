@@ -25,7 +25,7 @@ const LanguagesPage: React.FC = () => {
     fetchLanguages()
       .then((data) => setLanguages(data))
       .catch(() => {
-        // keep default data when backend is unavailable
+        
       });
   }, []);
 
