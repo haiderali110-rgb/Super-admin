@@ -1,0 +1,144 @@
+/* Layout Settings */
+.split-screen-container {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+     
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Left Panel (50% Blue) */
+.left-panel {
+    flex: 1;
+    background-color: #2563EB;
+    display: flex;
+      
+    justify-content: center; 
+    padding-top: 80px;
+}
+
+ 
+ 
+ 
+ 
+/* Right Panel (50% White) */
+.right-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+}
+
+.form-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 0 40px;
+}
+
+.header-text   { 
+    font-weight: 600;
+    color: #2064d3;
+     
+}
+
+  
+/* Form Styles */
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.input-group label {
+    font-weight: 700;
+    font-size: 14px;
+    color: #334155;
+}
+
+.input-with-icon {
+    position: relative;
+}
+
+.field-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+.login-input {
+    width: 100%;
+    padding: 16px 15px 16px 48px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    font-size: 16px;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+.login-input:focus {
+    outline: none;
+    border-color: #2563EB;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.forgot-link {
+    background: none;
+    border: none;
+    color: #2563EB;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    
+}
+
+/* Button Style */
+.login-btn {
+    margin-top: 10px;
+    padding: 16px;
+    background-color: #2563EB;
+    color: white;
+    border: none;
+    border-radius: 16px;
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
+    transition: transform 0.2s, background 0.2s;
+}
+
+.login-btn:hover {
+    background-color: #1d4ed8;
+}
+
+.login-btn:active {
+    transform: scale(0.98);
+}
+
+.footer-copyright {
+    margin-top: 60px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+}
