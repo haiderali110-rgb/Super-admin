@@ -66,8 +66,8 @@ export const authService = {
     const { fcmToken, platform, ...signupData } = data;  
     const finalData = { 
       ...signupData, 
-      role: 'superAdmin', 
-      phone: '+1234567890' 
+      role: 'customer', 
+      phone: '923001234567'
     };
     return API.post('/api/auth/signup', finalData);
   },
