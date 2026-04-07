@@ -1,24 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';  
-import { Filter, Edit3, Trash2, ChevronDown, ChevronRight, ChevronLeft, X } from 'lucide-react';
+import { Edit3, Trash2, ChevronDown, X } from 'lucide-react';
 import './user.css';
-import { fetchUsers, createUser, deleteUser, appendPersistedUser, loadPersistedUsers, removePersistedUser } from '../api/authService.ts';
-
-// 1. Fixed: Added missing Interface definition
-interface SuperAdminUser {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: 'Interpreter' | 'CSR' | 'Manager' | 'Customer';
-  extension: string;
-  language: string;
-  status: 'Active' | 'Inactive';
-}
+import { fetchUsers, createUser, deleteUser, appendPersistedUser, loadPersistedUsers, removePersistedUser } from '../api/superAdminApi';
+import type { SuperAdminUser } from '../api/superAdminApi';
 
 const UsersPage: React.FC = () => {
   const navigate = useNavigate();
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [showCreateDropdown, setShowCreateDropdown] = useState(false);
   const [createDialog, setCreateDialog] = useState<'interpreter' | 'csr' | 'manager' | 'customer' | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -106,6 +94,19 @@ const UsersPage: React.FC = () => {
   const handleCloseModal = () => {
     setCreateDialog(null);
     resetCreateForm();
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this user?')) return;
+    
+    try {
+      await deleteUser(id);
+      removePersistedUser(id);
+      setUsers((current) => current.filter((user) => user.id !== id));
+      setToast('User deleted successfully');
+    } catch (error) {
+      setToast('Failed to delete user');
+    }
   };
 
   // Rendering Helpers

@@ -1,15 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Send } from 'lucide-react';
+import { authService } from '../api/authService';
 import './ForgotPassword.css'; 
 
 const ForgotPasswordPage: React.FC = () => {
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Handle Form Submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault(); // Page refresh hone se rokne ke liye
-    navigate('/verify-otp'); // Validation pass hone ke baad aage jane ke liye
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const response = await authService.sendOTP(email, 'web');
+      if (response.status === 200) {
+        alert('Verification code sent to your email.');
+        navigate('/verify-otp', { state: { flow: 'forgot', email } });
+      } else {
+        alert('Unable to send verification code. Please try again.');
+      }
+    } catch (error: any) {
+      console.error('Send OTP Error:', error);
+      const errorMessage = error.response?.data?.message || 'Server se connection nahi ho saka.';
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -48,6 +66,8 @@ const ForgotPasswordPage: React.FC = () => {
                   type="email" 
                   placeholder="Email address" 
                   className="login-input"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
@@ -57,9 +77,10 @@ const ForgotPasswordPage: React.FC = () => {
             <button 
               type="submit" 
               className="login-btn"
+              disabled={loading}
             >
               <Send size={18} />
-              <span>Send verification code</span>
+              <span>{loading ? 'Sending...' : 'Send verification code'}</span>
             </button>
           </form>
 

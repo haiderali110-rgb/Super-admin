@@ -8,13 +8,12 @@ export default defineConfig({
   plugins: [react()],
   base: './',
   server: {
-    host: true,
-    port: 5173,
-    strictPort: true,
+    host: 'localhost',
+    port: parseInt(process.env.PORT || '5173', 10),
+    strictPort: false,
     hmr: {
       host: 'localhost',
       protocol: 'ws',
-      port: 5173,
     },
   },
   build: {

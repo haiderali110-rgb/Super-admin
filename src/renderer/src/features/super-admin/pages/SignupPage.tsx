@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, LogIn } from 'lucide-react';
+import { Mail, Lock, User, UserPlus } from 'lucide-react';
 
 // Sahi import path aur service
 import { authService } from '../../super-admin/api/authService';
 
-import './LoginPage.css'; 
+import './SignupPage.css'; 
 
-const LoginPage: React.FC = () => {
+const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   
   // Form states
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,10 +24,23 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Client-side validation
+    if (firstName.length < 3 || firstName.length > 15) {
+      alert('First name must be between 3 and 15 characters.');
+      return;
+    }
+    if (lastName.length < 3 || lastName.length > 15) {
+      alert('Last name must be between 3 and 15 characters.');
+      return;
+    }
+    
     setLoading(true);
 
     try {
-      const response = await authService.login({
+      const response = await authService.signup({
+        firstName,
+        lastName,
         email,
         password,
         platform: 'web',
@@ -33,30 +48,14 @@ const LoginPage: React.FC = () => {
       });
 
       const data = response.data;
-      const authToken = data?.data?.accessToken || data?.accessToken || data?.token;
-
-      if (authToken) {
-        localStorage.setItem('beloz_auth_token', authToken);
-
-        if (data.chainToken || data.data?.chainToken) {
-          localStorage.setItem('beloz_chain_token', data.chainToken || data.data.chainToken);
-        }
-
-        if (data.user || data.data?.user) {
-          localStorage.setItem('beloz_auth_user', JSON.stringify(data.user || data.data.user));
-        }
-
-        if (data.verifyAccessCode || data.data?.verifyAccessCode) {
-          localStorage.setItem('beloz_pending_login_email', email);
-          navigate('/verify-otp', { state: { flow: 'login', email } });
-        } else {
-          navigate('/super-admin/users');
-        }
+      if (response.status === 200 || response.status === 201) {
+        alert('Account created successfully! Please login.');
+        navigate('/login');
       } else {
-        alert(data?.message || data?.data?.message || 'Invalid email or password.');
+        alert(data?.message || 'Signup failed. Please try again.');
       }
     } catch (error: any) {
-      console.error('Login Error:', error);
+      console.error('Signup Error:', error);
       const errorMessage = error.response?.data?.message || 'Server se connection nahi ho saka.';
       alert(errorMessage);
     } finally {
@@ -80,11 +79,39 @@ const LoginPage: React.FC = () => {
       <div className="right-panel">
         <div className="form-card">
           <div className="header-text">
-            <h2>Welcome Back</h2>
-            <p>Enter your email and password to access your account.</p>
+            <h2>Create Account</h2>
+            <p>Enter your details to create your account.</p>
           </div>
 
           <form className="auth-form" onSubmit={handleSubmit}>
+            <div className="input-group">
+              <div className="input-with-icon">
+                <User className="field-icon" size={20} />
+                <input 
+                  type="text" 
+                  placeholder="First Name" 
+                  className="login-input"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="input-group">
+              <div className="input-with-icon">
+                <User className="field-icon" size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Last Name" 
+                  className="login-input"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
             <div className="input-group">
               <div className="input-with-icon">
                 <Mail className="field-icon" size={20} />
@@ -109,25 +136,19 @@ const LoginPage: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  minLength={8}
                 />
               </div>
-              <button 
-                onClick={() => navigate('/forgot-password')}
-                type="button" 
-                className="forgot-link"
-              >
-                Forgot password?
-              </button>
             </div>
 
             <button type="submit" className="login-btn" disabled={loading}>
-              <LogIn size={22} />
-              <span>{loading ? 'Processing...' : 'Sign In'}</span>
+              <UserPlus size={22} />
+              <span>{loading ? 'Creating...' : 'Sign Up'}</span>
             </button>
           </form>
 
           <div className="signup-section">
-            <p>Don't have an account? <button onClick={() => navigate('/signup')} className="signup-link">Sign Up</button></p>
+            <p>Already have an account? <button onClick={() => navigate('/login')} className="signup-link">Sign In</button></p>
           </div>
 
           <div className="footer-copyright">
@@ -139,4 +160,4 @@ const LoginPage: React.FC = () => {
   );
 };
 
-export default LoginPage;
+export default SignupPage;

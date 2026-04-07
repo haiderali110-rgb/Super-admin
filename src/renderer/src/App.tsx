@@ -2,16 +2,18 @@ import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import MainLayout from './components/Layout/MainLayout';
 import { LanguageProvider } from './contexts/LanguageContext';
 import './features/super-admin/pages/user.css';
- 
-import LoginPage from './features/super-admin/pages/AuthPage';
+
+// Auth Pages
+import LoginPage from './features/super-admin/pages/LoginPage';
+import SignupPage from './features/super-admin/pages/SignupPage';
 import ForgotPasswordPage from './features/super-admin/pages/ForgotPasswordPage';
 import VerifyOtpPage from './features/super-admin/pages/VerifyOtpPage';
 import ResetPasswordPage from './features/super-admin/pages/ResetPasswordPage';
 import CreateNewPasswordPage from './features/super-admin/pages/CreateNewPasswordPage';
 
-
+// Admin Pages
 import UsersPage from './features/super-admin/pages/UsersPage';
-import InterpreterHistory from './features/super-admin/pages/InterpreterHistory'; 
+import InterpreterHistory from './features/super-admin/pages/InterpreterHistory';
 import CSRHistory from './features/super-admin/pages/CSRHistory';
 import CustomerHistory from './features/super-admin/pages/CustomerHistory';
 import WebManager from './features/super-admin/pages/WebManager';
@@ -27,10 +29,10 @@ import EditManagerPage from './features/super-admin/pages/EditManagerPage';
 import LanguagesPage from './features/super-admin/pages/LanguagesPage';
 import LinesPage from './features/super-admin/pages/LinesPage';
 
-// Helper: Simple Protected Route Logic
+// Updated Protected Route: Uses 'beloz_auth_token'
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
-  const isAuthenticated = !!localStorage.getItem('token'); // Token check
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  const token = localStorage.getItem('beloz_auth_token');
+  return token ? children : <Navigate to="/login" replace />;
 };
 
 function App() {
@@ -40,23 +42,25 @@ function App() {
         <Routes>
           {/* Default Redirect */}
           <Route path="/" element={<Navigate to="/login" replace />} />
-          
+
           {/* Public Auth Routes */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/verify-otp" element={<VerifyOtpPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/first-login-setup" element={<CreateNewPasswordPage />} />
 
-          {/* Protected Dashboard Routes */}
-          <Route 
-            path="/super-admin" 
+          {/* Protected Dashboard Routes - All Wrapped in ProtectedRoute */}
+          <Route
+            path="/super-admin"
             element={
               <ProtectedRoute>
                 <MainLayout />
               </ProtectedRoute>
             }
           >
+            {/* Inner Routes: These will be rendered inside MainLayout's <Outlet /> */}
             <Route index element={<Navigate to="users" replace />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="history/interpreter" element={<InterpreterHistory />} />

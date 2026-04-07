@@ -1,14 +1,47 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import { authService } from '../api/authService';
 import './VerifyOtp.css'; 
 
 const VerifyOtpPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [otp, setOtp] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const state = (location.state as { flow?: 'forgot' | 'login'; email?: string }) || {};
+  const flow = state.flow || 'forgot';
+  const email = state.email || localStorage.getItem('beloz_pending_login_email') || '';
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/reset-password');
+    if (!email) {
+      alert('Email missing. Please start the flow again.');
+      navigate(flow === 'login' ? '/login' : '/forgot-password');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await authService.verifyOTP({ email, otp });
+      if (response.status === 200) {
+        if (flow === 'forgot') {
+          navigate('/reset-password', { state: { email, otp } });
+        } else {
+          localStorage.removeItem('beloz_pending_login_email');
+          navigate('/super-admin/users');
+        }
+      } else {
+        alert('Invalid verification code.');
+      }
+    } catch (error: any) {
+      console.error('Verify OTP Error:', error);
+      const errorMessage = error.response?.data?.message || 'Verification failed. Please try again.';
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -40,22 +73,20 @@ const VerifyOtpPage: React.FC = () => {
 
           <form className="auth-form" onSubmit={handleSubmit}>
             
-     
             <div className="otp-input-container">
-              {[1, 2, 3, 4].map((i) => (
-                <input 
-                  key={i} 
-                  type="text" 
-                  maxLength={1} 
-                  required 
-                  className="otp-box"
-                  pattern="\d*"
-                />
-              ))}
+              <input
+                type="text"
+                placeholder="Enter verification code"
+                className="otp-box"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                maxLength={6}
+                required
+              />
             </div>
 
-            <button type="submit" className="login-btn">
-              <span>Verify code</span>
+            <button type="submit" className="login-btn" disabled={loading}>
+              <span>{loading ? 'Verifying...' : 'Verify code'}</span>
               <ArrowRight size={20}/>
             </button>
           </form>

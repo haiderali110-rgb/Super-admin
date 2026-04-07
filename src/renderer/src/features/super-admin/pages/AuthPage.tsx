@@ -13,7 +13,7 @@ const AuthPage = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await authService.login(loginData);
+      const res = await authService.login({ ...loginData, platform: 'web', fcmToken: { deviceId: 'desktop', token: '' } });
       localStorage.setItem('token', res.data.token);
       alert("Login Successful!");
       window.location.href = "/dashboard";
@@ -26,7 +26,7 @@ const AuthPage = () => {
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await authService.sendOTP(email);
+      await authService.sendOTP(email, 'web');
       alert("OTP sent to your email!");
       setStep('otp');
     } catch (err) {
@@ -38,7 +38,7 @@ const AuthPage = () => {
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await authService.verifyOTP(email, otp);
+      await authService.verifyOTP({ email, otp });
       setStep('reset');
     } catch (err) {
       alert("Invalid OTP. Please try again.");

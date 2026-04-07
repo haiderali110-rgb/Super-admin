@@ -163,14 +163,7 @@ async function authFetch<T>(
   }
 }
 
-// ============================================
-// Authentication APIs
-// ============================================
-
-/**
- * POST /api/auth/login
- * Login with email and password
- */
+ 
 export const login = async (credentials: LoginRequest): Promise<ApiResult<LoginResponse>> => {
   return authFetch<LoginResponse>('/api/auth/login', {
     method: 'POST',
@@ -178,10 +171,7 @@ export const login = async (credentials: LoginRequest): Promise<ApiResult<LoginR
   });
 };
 
-/**
- * POST /api/auth/register
- * Register a new user
- */
+ 
 export const register = async (userData: RegisterRequest): Promise<ApiResult<RegisterResponse>> => {
   return authFetch<RegisterResponse>('/api/auth/register', {
     method: 'POST',
@@ -189,44 +179,28 @@ export const register = async (userData: RegisterRequest): Promise<ApiResult<Reg
   });
 };
 
-/**
- * POST /api/auth/logout
- * Logout current user
- */
+ 
 export const logout = async (): Promise<ApiResult<{ success: boolean; message: string }>> => {
   return authFetch<{ success: boolean; message: string }>('/api/auth/logout', {
     method: 'POST',
   }, true);
 };
 
-/**
- * GET /api/auth/me
- * Get current logged in user
- */
+ 
 export const getCurrentUser = async (): Promise<ApiResult<{ success: boolean; user: AuthUser }>> => {
   return authFetch<{ success: boolean; user: AuthUser }>('/api/auth/me', {
     method: 'GET',
   }, true);
 };
 
-/**
- * POST /api/auth/refresh-token
- * Refresh authentication token
- */
+ 
 export const refreshToken = async (): Promise<ApiResult<RefreshTokenResponse>> => {
   return authFetch<RefreshTokenResponse>('/api/auth/refresh-token', {
     method: 'POST',
   }, true);
 };
 
-// ============================================
-// Password Management APIs
-// ============================================
-
-/**
- * POST /api/auth/forgot-password
- * Send password reset OTP to email
- */
+ 
 export const forgotPassword = async (email: string): Promise<ApiResult<ForgotPasswordResponse>> => {
   return authFetch<ForgotPasswordResponse>('/api/auth/forgot-password', {
     method: 'POST',
@@ -234,10 +208,7 @@ export const forgotPassword = async (email: string): Promise<ApiResult<ForgotPas
   });
 };
 
-/**
- * POST /api/auth/verify-otp
- * Verify OTP for password reset
- */
+ 
 export const verifyOtp = async (data: VerifyOtpRequest): Promise<ApiResult<VerifyOtpResponse>> => {
   return authFetch<VerifyOtpResponse>('/api/auth/verify-otp', {
     method: 'POST',
@@ -245,10 +216,7 @@ export const verifyOtp = async (data: VerifyOtpRequest): Promise<ApiResult<Verif
   });
 };
 
-/**
- * POST /api/auth/resend-otp
- * Resend OTP to email/phone
- */
+ 
 export const resendOtp = async (otpRequestId: string): Promise<ApiResult<{ success: boolean; message: string; newOtpRequestId?: string }>> => {
   return authFetch<{ success: boolean; message: string; newOtpRequestId?: string }>('/api/auth/resend-otp', {
     method: 'POST',
@@ -256,118 +224,72 @@ export const resendOtp = async (otpRequestId: string): Promise<ApiResult<{ succe
   });
 };
 
-/**
- * POST /api/auth/reset-password
- * Reset password with verified OTP
- */
+
 export const resetPassword = async (data: ResetPasswordRequest): Promise<ApiResult<ResetPasswordResponse>> => {
   return authFetch<ResetPasswordResponse>('/api/auth/reset-password', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 };
-
-/**
- * POST /api/auth/change-password
- * Change password for logged in user
- */
+ 
 export const changePassword = async (data: ChangePasswordRequest): Promise<ApiResult<ChangePasswordResponse>> => {
   return authFetch<ChangePasswordResponse>('/api/auth/change-password', {
     method: 'POST',
     body: JSON.stringify(data),
   }, true);
 };
-
-// ============================================
-// Email Verification APIs
-// ============================================
-
-/**
- * POST /api/auth/send-verification-email
- * Send email verification link
- */
+ 
 export const sendVerificationEmail = async (): Promise<ApiResult<{ success: boolean; message: string }>> => {
   return authFetch<{ success: boolean; message: string }>('/api/auth/send-verification-email', {
     method: 'POST',
   }, true);
 };
 
-/**
- * GET /api/auth/verify-email/:token
- * Verify email with token
- */
+ 
 export const verifyEmail = async (token: string): Promise<ApiResult<{ success: boolean; message: string }>> => {
   return authFetch<{ success: boolean; message: string }>(`/api/auth/verify-email/${token}`, {
     method: 'GET',
   });
 };
 
-// ============================================
-// Social Login APIs
-// ============================================
-
-/**
- * GET /api/auth/google
- * Initiate Google OAuth login
- */
+ 
 export const googleLogin = (): void => {
   window.location.href = `${API_BASE_URL}/api/auth/google`;
 };
 
-/**
- * GET /api/auth/facebook
- * Initiate Facebook OAuth login
- */
+
 export const facebookLogin = (): void => {
   window.location.href = `${API_BASE_URL}/api/auth/facebook`;
 };
 
-/**
- * GET /api/auth/google/callback
- * Handle Google OAuth callback
- */
+
 export const handleGoogleCallback = async (code: string): Promise<ApiResult<LoginResponse>> => {
   return authFetch<LoginResponse>('/api/auth/google/callback', {
     method: 'POST',
     body: JSON.stringify({ code }),
   });
 };
-
-// ============================================
-// Utility Functions
-// ============================================
-
-/**
- * Store auth token in localStorage
- */
+ 
 export const setAuthToken = (token: string): void => {
   localStorage.setItem('beloz_auth_token', token);
 };
 
-/**
- * Get auth token from localStorage
- */
+ 
 export const getAuthToken = (): string | null => {
   return localStorage.getItem('beloz_auth_token');
 };
 
-/**
- * Remove auth token from localStorage
- */
+ 
 export const removeAuthToken = (): void => {
   localStorage.removeItem('beloz_auth_token');
 };
 
-/**
- * Store user data in localStorage
- */
+ 
 export const setAuthUser = (user: AuthUser): void => {
   localStorage.setItem('beloz_auth_user', JSON.stringify(user));
 };
 
-/**
- * Get user data from localStorage
- */
+ 
 export const getAuthUser = (): AuthUser | null => {
   const userData = localStorage.getItem('beloz_auth_user');
   if (userData) {
@@ -380,16 +302,12 @@ export const getAuthUser = (): AuthUser | null => {
   return null;
 };
 
-/**
- * Remove user data from localStorage
- */
+ 
 export const removeAuthUser = (): void => {
   localStorage.removeItem('beloz_auth_user');
 };
 
-/**
- * Clear all auth data (logout)
- */
+ 
 export const clearAuthData = (): void => {
   removeAuthToken();
   removeAuthUser();
@@ -434,15 +352,12 @@ export const isValidPassword = (password: string): { valid: boolean; message: st
   return { valid: true, message: 'Password is strong' };
 };
 
-// ============================================
-// Mock Data for Development (when API unavailable)
-// ============================================
-
+ 
 export const mockLogin = async (credentials: LoginRequest): Promise<LoginResponse> => {
-  // Simulate network delay
+   
   await new Promise(resolve => setTimeout(resolve, 1000));
 
-  // Mock validation
+   
   if (credentials.email === 'admin@beloz.com' && credentials.password === 'Admin123!') {
     return {
       success: true,
