@@ -43,7 +43,7 @@ const SignupPage: React.FC = () => {
         lastName,
         email,
         password,
-        platform: 'web',
+        platform: 'desktop',
         fcmToken: getFcmPayload()
       });
 

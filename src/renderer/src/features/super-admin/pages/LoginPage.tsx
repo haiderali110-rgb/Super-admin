@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, LogIn } from 'lucide-react';
+import { Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react';
 
 // Sahi import path aur service
 import { authService } from '../../super-admin/api/authService';
@@ -13,6 +13,7 @@ const LoginPage: React.FC = () => {
   // Form states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const getFcmPayload = () => ({
@@ -28,7 +29,7 @@ const LoginPage: React.FC = () => {
       const response = await authService.login({
         email,
         password,
-        platform: 'web',
+        platform: 'desktop',
         fcmToken: getFcmPayload(),
       });
 
@@ -103,13 +104,20 @@ const LoginPage: React.FC = () => {
               <div className="input-with-icon">
                 <Lock className="field-icon" size={20} />
                 <input 
-                  type="password" 
+                  type={showPassword ? 'text' : 'password'} 
                   placeholder="Password" 
                   className="login-input"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="toggle-password"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
               </div>
               <button 
                 onClick={() => navigate('/forgot-password')}

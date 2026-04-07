@@ -1,193 +1,368 @@
-import React, { useEffect, useState } from 'react';
-import { ChevronDown, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2 } from 'lucide-react';
 import './user.css';
-import { fetchLanguages } from '../api/superAdminApi';
-import type { LanguageRate } from '../api/superAdminApi';
+import {
+  fetchLanguages,
+  createLanguage,
+  updateLanguage,
+  deleteLanguage,
+  fetchLanguageGroups,
+} from '../api/superAdminApi';
+import type { LanguageRate, LanguageGroup } from '../api/superAdminApi';
 import { useLanguage, uiLabels } from '../../../contexts/LanguageContext';
 
-type LanguageScreen = 'info' | 'add' | 'edit' | 'details' | 'notifications';
+const ITEMS_PER_PAGE = 10;
+
+type ModalMode = 'none' | 'add' | 'edit' | 'delete';
+
+type LanguageForm = {
+  language: string;
+  languageGroup: string;
+  normalCallRate: string;
+  emergencyCallRate: string;
+  status: string;
+};
 
 const LanguagesPage: React.FC = () => {
-  const [currentScreen, setCurrentScreen] = useState<LanguageScreen>('info');
+  const [languages, setLanguages] = useState<LanguageRate[]>([]);
+  const [languageGroups, setLanguageGroups] = useState<LanguageGroup[]>([]);
+  const [modalMode, setModalMode] = useState<ModalMode>('none');
   const [selectedLanguageRate, setSelectedLanguageRate] = useState<LanguageRate | null>(null);
-  const [languages, setLanguages] = useState<LanguageRate[]>([
-    { id: '1', language: 'English', ratePerMinute: '$0.55', status: 'Active' },
-    { id: '2', language: 'Spanish', ratePerMinute: '$0.65', status: 'Active' },
-    { id: '3', language: 'German', ratePerMinute: '$0.82', status: 'Inactive' },
-    { id: '4', language: 'Urdu', ratePerMinute: '$0.50', status: 'Active' },
-  ]);
-  const [form, setForm] = useState({ language: '', ratePerMinute: '', status: 'Active' });
+  const [form, setForm] = useState<LanguageForm>({
+    language: '',
+    languageGroup: 'Europe',
+    normalCallRate: '',
+    emergencyCallRate: '',
+    status: 'Active',
+  });
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const { language: selectedLanguage, setLanguage } = useLanguage();
+  const { language: selectedLanguage } = useLanguage();
   const labels = uiLabels[selectedLanguage]?.pages.languagesPage ?? uiLabels.English.pages.languagesPage;
 
   useEffect(() => {
     fetchLanguages()
       .then((data) => setLanguages(data))
-      .catch(() => {
-        
-      });
+      .catch(() => setLanguages([]));
+
+    fetchLanguageGroups()
+      .then((groups) => setLanguageGroups(groups))
+      .catch(() =>
+        setLanguageGroups([
+          { _id: '1', name: 'Europe' },
+          { _id: '2', name: 'Middle East' },
+          { _id: '3', name: 'Asia' },
+          { _id: '4', name: 'Americas' },
+        ]),
+      );
   }, []);
 
-  const openAddScreen = () => {
-    setForm({ language: '', ratePerMinute: '', status: 'Active' });
+  useEffect(() => {
+    if (languageGroups.length && !form.languageGroup) {
+      setForm((prev) => ({ ...prev, languageGroup: languageGroups[0].name }));
+    }
+  }, [languageGroups]);
+
+  const pagedLanguages = useMemo(() => {
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    return languages.slice(start, start + ITEMS_PER_PAGE);
+  }, [languages, page]);
+
+  const totalPages = Math.max(1, Math.ceil(languages.length / ITEMS_PER_PAGE));
+
+  const resetForm = () => {
+    setForm({
+      language: '',
+      languageGroup: languageGroups[0]?.name || 'Europe',
+      normalCallRate: '',
+      emergencyCallRate: '',
+      status: 'Active',
+    });
+    setErrorMessage(null);
+  };
+
+  const openAddModal = () => {
+    resetForm();
     setSelectedLanguageRate(null);
-    setCurrentScreen('add');
+    setModalMode('add');
   };
 
-  const openEditScreen = (item: LanguageRate) => {
-    setForm({ language: item.language, ratePerMinute: item.ratePerMinute, status: item.status });
+  const openEditModal = (item: LanguageRate) => {
     setSelectedLanguageRate(item);
-    setCurrentScreen('edit');
+    setForm({
+      language: item.language,
+      languageGroup: item.languageGroup,
+      normalCallRate: item.normalCallRate.toString(),
+      emergencyCallRate: item.emergencyCallRate.toString(),
+      status: item.status,
+    });
+    setErrorMessage(null);
+    setModalMode('edit');
   };
 
-  const openDetailsScreen = (item: LanguageRate) => {
+  const openDeleteModal = (item: LanguageRate) => {
     setSelectedLanguageRate(item);
-    setCurrentScreen('details');
+    setErrorMessage(null);
+    setModalMode('delete');
   };
 
-  const addLanguage = () => {
-    const newItem: LanguageRate = {
-      id: Date.now().toString(),
-      language: form.language || 'New language',
-      ratePerMinute: form.ratePerMinute || '$0.00',
-      status: (form.status as string) || 'Active',
-    };
-    setLanguages((prev) => [newItem, ...prev]);
-    setCurrentScreen('info');
+  const closeModal = () => {
+    setModalMode('none');
+    setSelectedLanguageRate(null);
+    setErrorMessage(null);
   };
 
-  const updateLanguage = () => {
+  const handleFormChange = (field: keyof LanguageForm, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const validateForm = (): string | null => {
+    if (!form.language.trim()) return 'Language is required.';
+    if (!form.languageGroup.trim()) return 'Language group is required.';
+    if (!form.normalCallRate.trim()) return 'Normal call rate is required.';
+    if (!form.emergencyCallRate.trim()) return 'Emergency call rate is required.';
+    if (Number.isNaN(Number(form.normalCallRate)) || Number(form.normalCallRate) < 0) return 'Normal call rate must be a valid number.';
+    if (Number.isNaN(Number(form.emergencyCallRate)) || Number(form.emergencyCallRate) < 0) return 'Emergency call rate must be a valid number.';
+    return null;
+  };
+
+  const handleCreateLanguage = async () => {
+    const validationError = validateForm();
+    if (validationError) {
+      setErrorMessage(validationError);
+      return;
+    }
+    setLoading(true);
+    try {
+      const newLanguage = {
+        language: form.language,
+        languageGroup: form.languageGroup,
+        normalCallRate: Number(form.normalCallRate),
+        emergencyCallRate: Number(form.emergencyCallRate),
+        status: form.status,
+      };
+      const created = await createLanguage(newLanguage);
+      setLanguages((prev) => [created, ...prev]);
+      setPage(1);
+      closeModal();
+    } catch {
+      setErrorMessage('Unable to save language. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateLanguage = async () => {
     if (!selectedLanguageRate) return;
-    setLanguages((prev) =>
-      prev.map((item) =>
-        item.id === selectedLanguageRate.id
-          ? { ...item, language: form.language, ratePerMinute: form.ratePerMinute, status: form.status }
-          : item,
-      ),
-    );
-    setCurrentScreen('info');
-    setSelectedLanguageRate(null);
+    const validationError = validateForm();
+    if (validationError) {
+      setErrorMessage(validationError);
+      return;
+    }
+    setLoading(true);
+    try {
+      const updatedItem = await updateLanguage(selectedLanguageRate._id, {
+        language: form.language,
+        languageGroup: form.languageGroup,
+        normalCallRate: Number(form.normalCallRate),
+        emergencyCallRate: Number(form.emergencyCallRate),
+        status: form.status,
+      });
+      setLanguages((prev) => prev.map((item) => (item._id === updatedItem._id ? updatedItem : item)));
+      closeModal();
+    } catch {
+      setErrorMessage('Unable to update language. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const content = () => {
-    if (currentScreen === 'add') {
+  const handleDeleteLanguage = async () => {
+    if (!selectedLanguageRate) return;
+    setLoading(true);
+    try {
+      await deleteLanguage(selectedLanguageRate._id);
+      setLanguages((prev) => prev.filter((item) => item._id !== selectedLanguageRate._id));
+      closeModal();
+    } catch {
+      setErrorMessage('Unable to delete language. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderModalContent = () => {
+    if (modalMode === 'delete' && selectedLanguageRate) {
       return (
-        <div className="form-card">
-          <h3>{labels.createHeader} (2nd screen)</h3>
-          <label>Language</label>
-          <input value={form.language} onChange={(e) => setForm((prev) => ({ ...prev, language: e.target.value }))} />
-          <label>Rate Per Minute</label>
-          <input value={form.ratePerMinute} onChange={(e) => setForm((prev) => ({ ...prev, ratePerMinute: e.target.value }))} />
-          <label>Status</label>
-          <select value={form.status} onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}>
-            <option>Active</option>
-            <option>Inactive</option>
-          </select>
-          <div className="form-actions">
-            <button className="btn-primary" onClick={addLanguage}>Save</button>
-            <button className="btn-secondary" onClick={() => setCurrentScreen('info')}>Cancel</button>
+        <div className="modal-card">
+          <div className="modal-header">
+            <h3>{labels.deleteModalTitle}</h3>
+            <button className="modal-close" onClick={closeModal}>&times;</button>
           </div>
-        </div>
-      );
-    }
-
-    if (currentScreen === 'edit' && selectedLanguageRate) {
-      return (
-        <div className="form-card">
-          <h3>Edit team language / rate (3rd screen)</h3>
-          <label>Language</label>
-          <input value={form.language} onChange={(e) => setForm((prev) => ({ ...prev, language: e.target.value }))} />
-          <label>Rate Per Minute</label>
-          <input value={form.ratePerMinute} onChange={(e) => setForm((prev) => ({ ...prev, ratePerMinute: e.target.value }))} />
-          <label>Status</label>
-          <select value={form.status} onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}>
-            <option>Active</option>
-            <option>Inactive</option>
-          </select>
-          <div className="form-actions">
-            <button className="btn-primary" onClick={updateLanguage}>Update</button>
-            <button className="btn-secondary" onClick={() => setCurrentScreen('info')}>Cancel</button>
+          <p className="modal-text">{labels.deleteConfirmation}</p>
+          <div className="modal-actions">
+            <button className="btn-danger" onClick={handleDeleteLanguage} disabled={loading}>{labels.btnYesDelete}</button>
+            <button className="btn-secondary" onClick={closeModal} disabled={loading}>{labels.btnNoKeep}</button>
           </div>
+          {errorMessage && <p className="modal-error">{errorMessage}</p>}
         </div>
       );
     }
 
-    if (currentScreen === 'details' && selectedLanguageRate) {
-      return (
-        <div className="form-card">
-          <h3>Language details (4th screen)</h3>
-          <p><strong>Language:</strong> {selectedLanguageRate.language}</p>
-          <p><strong>Rate / Min:</strong> {selectedLanguageRate.ratePerMinute}</p>
-          <p><strong>Status:</strong> {selectedLanguageRate.status}</p>
-          <button className="btn-primary" onClick={() => setCurrentScreen('info')}>Back to list</button>
-        </div>
-      );
-    }
-
-    if (currentScreen === 'notifications') {
-      return (
-        <div className="form-card">
-          <h3>Notifications (5th screen)</h3>
-          <ul className="notifications-list">
-            <li>New interpreter request pending</li>
-            <li>CSR role change approved</li>
-            <li>Language rate updated</li>
-          </ul>
-          <button className="btn-primary" onClick={() => setCurrentScreen('info')}>Back to languages</button>
-        </div>
-      );
-    }
+    const heading = modalMode === 'edit' ? labels.editModalTitle : labels.addModalTitle;
+    const submitLabel = modalMode === 'edit' ? labels.btnSave : labels.btnCreate;
 
     return (
-      <div className="table-card">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>{labels.tableHeaders.language}</th>
-              <th>{labels.tableHeaders.rate}</th>
-              <th>{labels.tableHeaders.status}</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {languages.map((item) => (
-              <tr key={item.id} className={item.language === selectedLanguage ? 'selected-row' : ''}>
-                <td className="font-medium">{item.language}</td>
-                <td>{item.ratePerMinute}</td>
-                <td>
-                  <span className={`badge ${item.status.toLowerCase()}`}>
-                    <span className="dot"></span> {labels.statusMap[item.status] ?? item.status}
-                  </span>
-                </td>
-                <td>
-                  <button className="btn-link" onClick={() => openDetailsScreen(item)}>View</button>
-                  <button className="btn-link" onClick={() => openEditScreen(item)}>Edit</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="modal-card modal-form-card">
+        <div className="modal-header">
+          <h3>{heading}</h3>
+          <button className="modal-close" onClick={closeModal}>&times;</button>
+        </div>
+        <div className="form-grid modal-form-grid">
+          <div className="form-group">
+            <label className="form-label">{labels.tableHeaders.language}</label>
+            <input
+              className="form-input"
+              value={form.language}
+              onChange={(e) => handleFormChange('language', e.target.value)}
+              placeholder="Language"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">{labels.tableHeaders.languageGroup}</label>
+            <select
+              className="form-select"
+              value={form.languageGroup}
+              onChange={(e) => handleFormChange('languageGroup', e.target.value)}
+            >
+              {languageGroups.map((group) => (
+                <option key={group._id} value={group.name}>{group.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">{labels.tableHeaders.normalCallRate}</label>
+            <input
+              className="form-input"
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.normalCallRate}
+              onChange={(e) => handleFormChange('normalCallRate', e.target.value)}
+              placeholder="e.g. 10"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">{labels.tableHeaders.emergencyCallRate}</label>
+            <input
+              className="form-input"
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.emergencyCallRate}
+              onChange={(e) => handleFormChange('emergencyCallRate', e.target.value)}
+              placeholder="e.g. 15"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">{labels.tableHeaders.status}</label>
+            <select
+              className="form-select"
+              value={form.status}
+              onChange={(e) => handleFormChange('status', e.target.value)}
+            >
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+        <div className="form-actions modal-actions-row">
+          <button className="btn-primary" onClick={modalMode === 'edit' ? handleUpdateLanguage : handleCreateLanguage} disabled={loading}>
+            {loading ? 'Saving...' : submitLabel}
+          </button>
+          <button className="btn-secondary" onClick={closeModal} disabled={loading}>Cancel</button>
+        </div>
+        {errorMessage && <p className="modal-error">{errorMessage}</p>}
       </div>
     );
   };
 
   return (
     <div className="page-content">
-      <div className="view-header">
-        <h2>{labels.title}</h2>
-        <p>{labels.subtitle}</p>
+      <div className="view-header space-between">
+        <div>
+          <h2>{labels.title}</h2>
+          <p>{labels.subtitle}</p>
+        </div>
+        <button className="btn-create" onClick={openAddModal}>
+          <Plus size={16} /> {labels.button}
+        </button>
       </div>
 
-      <div className="page-tabs">
-        <button className={currentScreen === 'info' ? 'tab-active' : ''} onClick={() => setCurrentScreen('info')}>Language Info</button>
-        <button className={currentScreen === 'add' ? 'tab-active' : ''} onClick={openAddScreen}>Add Language</button>
-        <button className={currentScreen === 'edit' ? 'tab-active' : ''} onClick={() => selectedLanguageRate ? setCurrentScreen('edit') : openAddScreen()}>Edit Team</button>
-        <button className={currentScreen === 'details' ? 'tab-active' : ''} onClick={() => selectedLanguageRate ? setCurrentScreen('details') : setCurrentScreen('info')}>Language Screen</button>
-        <button className={currentScreen === 'notifications' ? 'tab-active' : ''} onClick={() => setCurrentScreen('notifications')}>Notifications</button>
+      <div className="table-card languages-table-card">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>{labels.tableHeaders.language}</th>
+              <th>{labels.tableHeaders.languageGroup}</th>
+              <th>{labels.tableHeaders.normalCallRate}</th>
+              <th>{labels.tableHeaders.emergencyCallRate}</th>
+              <th>{labels.tableHeaders.status}</th>
+              <th>{labels.tableHeaders.edit}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pagedLanguages.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="empty-state">No languages available.</td>
+              </tr>
+            ) : (
+              pagedLanguages.map((item) => (
+                <tr key={item._id}>
+                  <td className="font-medium">{item.language}</td>
+                  <td>{item.languageGroup}</td>
+                  <td>{item.normalCallRate}$</td>
+                  <td>{item.emergencyCallRate}$</td>
+                  <td>
+                    <span className={`badge ${item.status.toLowerCase()}`}>
+                      <span className="dot" /> {item.status}
+                    </span>
+                  </td>
+                  <td className="actions-cell">
+                    <button className="icon-button" onClick={() => openEditModal(item)} title="Edit">
+                      <Edit2 size={18} />
+                    </button>
+                    <button className="icon-button danger" onClick={() => openDeleteModal(item)} title="Delete">
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
-      {content()}
+      <div className="pagination-footer">
+        <button className="pg-arrow" disabled={page === 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))}>
+          <ChevronLeft size={16} />
+        </button>
+        {[...Array(totalPages)].map((_, index) => {
+          const pageNumber = index + 1;
+          return (
+            <button key={pageNumber} className={`pg-num ${pageNumber === page ? 'active' : ''}`} onClick={() => setPage(pageNumber)}>
+              {pageNumber}
+            </button>
+          );
+        })}
+        <button className="pg-arrow" disabled={page === totalPages} onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}>
+          <ChevronRight size={16} />
+        </button>
+      </div>
+
+      {modalMode !== 'none' && <div className="modal-overlay">{renderModalContent()}</div>}
     </div>
   );
 };

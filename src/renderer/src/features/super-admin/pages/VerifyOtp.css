@@ -11,7 +11,7 @@
 /* LEFT PANEL (Matching LoginPage exactly) */
 .left-panel {
     flex: 1;
-    background-color: #2563EB;
+    background-color: #5B8DEF;
     display: flex;
     justify-content: center; 
     padding-top: 80px;
@@ -44,12 +44,12 @@
 .header-text h2 {
     font-size: 50px;
     font-weight: 600;
-    color: #2064d3;
+    color: #5B8DEF;
     margin-bottom: 8px;
 }
 
 .header-text p {
-    color: #2064d3;
+    color: #5B8DEF;
     font-size: 16px;
     margin-bottom: 35px;
     line-height: 1.5;
@@ -78,15 +78,15 @@
 
 .otp-box:focus {
     outline: none;
-    border-color: #2563EB;
+    border-color: #5B8DEF;
     background-color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 0 4px rgba(91, 141, 239, 0.1);
 }
 
 .login-btn {
     width: 100%;
     padding: 16px;
-    background-color: #2563EB;
+    background-color: #5B8DEF;
     color: white;
     border: none;
     border-radius: 16px;

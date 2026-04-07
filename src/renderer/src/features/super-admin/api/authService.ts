@@ -26,6 +26,10 @@ export interface SignupRequest {
   role?: string;
   platform?: 'mobile' | 'web' | 'desktop';
   fcmToken?: FcmToken;
+  enterprise?: string;
+  state?: string;
+  city?: string;
+  facility?: string[];
 }
 
 export interface AuthUser {
@@ -63,11 +67,15 @@ export interface ApiResponse<T = any> {
 
 export const authService = {
   signup: (data: SignupRequest): Promise<AxiosResponse<ApiResponse<any>>> => {
-    const { fcmToken, platform, ...signupData } = data;  
-    const finalData = { 
-      ...signupData, 
-      role: 'customer', 
-      phone: '923001234567'
+    const { fcmToken, platform, ...signupData } = data;
+    const finalData = {
+      ...signupData,
+      role: 'customer',
+      phone: '923001234567', 
+      enterprise: 'Default Enterprise',  
+      state: 'Default State',  
+      city: 'Default City',  
+      facility: ['Default Facility']  
     };
     return API.post('/api/auth/signup', finalData);
   },
