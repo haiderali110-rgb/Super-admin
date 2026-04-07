@@ -56,8 +56,10 @@ const SignupPage: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Signup Error:', error);
-      const errorMessage = error.response?.data?.message || 'Server se connection nahi ho saka.';
-      alert(errorMessage);
+      console.error('Error response:', error.response);
+      console.error('Error data:', error.response?.data);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'Server se connection nahi ho saka.';
+      alert(`Signup failed: ${errorMessage}`);
     } finally {
       setLoading(false);
     }

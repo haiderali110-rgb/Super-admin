@@ -63,11 +63,9 @@ export interface ApiResponse<T = any> {
 
 export const authService = {
   signup: (data: SignupRequest): Promise<AxiosResponse<ApiResponse<any>>> => {
-    const { fcmToken, platform, firstName, lastName, ...rest } = data;  
+    const { fcmToken, platform, ...signupData } = data;  
     const finalData = { 
-      ...rest, 
-      first_name: firstName,
-      last_name: lastName,
+      ...signupData, 
       role: 'superAdmin', 
       phone: '+1234567890' 
     };
