@@ -17,26 +17,26 @@
 }
 
 .logo-section {
-  text-align: center;
+  /* text-align: center;
   z-index: 2;
-  position: relative;
+  position: relative; */
 }
 
 .logo-wrapper {
-  margin-bottom: 2rem;
+  /* margin-bottom: 2rem; */
 }
 
 .logo-img {
-  width: 120px;
+  /* width: 120px;
   height: 120px;
-  object-fit: contain;
+  object-fit: contain; */
 }
 
 .side-visual {
-  width: 300px;
+  /* width: 300px;
   height: 300px;
   object-fit: contain;
-  opacity: 0.8;
+  opacity: 0.8; */
 }
 
 .right-panel {
