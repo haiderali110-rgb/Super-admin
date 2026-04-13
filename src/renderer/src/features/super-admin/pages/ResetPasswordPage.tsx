@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Lock, KeyRound } from 'lucide-react';
+import { Lock, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { authService } from '../api/authService';
 import './ResetPassword.css'; 
 
@@ -9,6 +9,8 @@ const ResetPasswordPage: React.FC = () => {
   const location = useLocation();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const state = (location.state as { email?: string; otp?: string }) || {};
@@ -71,11 +73,11 @@ const ResetPasswordPage: React.FC = () => {
 
       {/* --- RIGHT SIDE: Reset Password Form --- */}
       <div className="reset-right-panel">
-        <div className="reset-form-card">
+        <div className="reset-form-container">
           
           <div className="reset-header-text">
-            <h2>Reset password</h2>
-            <p>Create a strong, secure password for your account.</p>
+            <h2>Reset password</h2> <br/>
+            <p>Create a strong and <br/> secure password</p><br/>
           </div>
 
           <form className="reset-main-form" onSubmit={handleSubmit}>
@@ -93,6 +95,9 @@ const ResetPasswordPage: React.FC = () => {
                   required
                   minLength={8}
                 />
+                <button type="button" className="eye-btn" onClick={() => setShowPassword(!showPassword)}>
+                                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
               </div>
             </div>
  
@@ -108,21 +113,20 @@ const ResetPasswordPage: React.FC = () => {
                   required
                   minLength={8}
                 />
+                <button type="button" className="eye-btn" onClick={() => setShowPassword(!showPassword)}>
+                                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
               </div>
             </div>
 
-            <p className="reset-password-hint">
-              Use at least 8 characters, including letters and numbers.
-            </p>
+             
 
             <button type="submit" className="reset-submit-btn" disabled={loading}>
               <span>{loading ? 'Resetting...' : 'Reset password'}</span>
             </button>
           </form>
 
-          <div className="reset-footer">
-            <p>© 2026 Beloz Ecosystem. All rights reserved.</p>
-          </div>
+           
         </div>
       </div>
     </div>

@@ -1,8 +1,8 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Users, History, Globe, PhoneForwarded } from 'lucide-react';
-import { useLanguage, uiLabels } from '../../contexts/LanguageContext';
-import '../../features/super-admin/pages/user.css';
+import { useLanguage, uiLabels } from '../contexts/LanguageContext';
+import '../features/super-admin/pages/user.css';
 
 const Sidebar: React.FC = () => {
   const { language } = useLanguage();

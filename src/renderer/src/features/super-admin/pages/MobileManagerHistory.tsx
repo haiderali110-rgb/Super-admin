@@ -49,6 +49,7 @@ const MobileManagerHistory: React.FC = () => {
 
   useEffect(() => {
     fetchHistory('web-manager')
+    fetchHistory('mobile-manager')
       .then(setRows)
       .catch(() => {
          

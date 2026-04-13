@@ -1,4 +1,4 @@
-
+﻿
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, ChevronRight, ChevronLeft, Edit3, Trash2, X } from 'lucide-react';
@@ -173,7 +173,7 @@ const InterpreterHistory: React.FC = () => {
           
           <div className="dropdown-container">
             <button className="btn-history-filter" onClick={() => setShowHistoryDD(!showHistoryDD)}>
-              Interpreter’s history <ChevronDown size={18} />
+              {labels.dropdown.interpreter} <ChevronDown size={18} />
             </button>
             
             {showHistoryDD && (
@@ -224,7 +224,7 @@ const InterpreterHistory: React.FC = () => {
                 <td className="font-medium">{row.enterprise}</td>
                 <td>{row.datetime}</td>
                 <td>{row.accessCode}</td>
-                <td>{row.language || '—'}</td>
+                <td>{row.language || 'â€”'}</td>
                 <td>{row.duration}</td>
                 <td>
                   <button type="button" className="icon-button" onClick={() => handleEditRow(row.id ?? row.accessCode)}>

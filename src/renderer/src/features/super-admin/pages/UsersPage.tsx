@@ -1,225 +1,235 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';  
-import { Edit3, Trash2, ChevronDown, X } from 'lucide-react';
+import { Edit3, Trash2, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import './user.css';
-import { fetchUsers, createUser, deleteUser, appendPersistedUser, loadPersistedUsers, removePersistedUser } from '../api/superAdminApi';
+import { fetchUsers, deleteUser, loadPersistedUsers, removePersistedUser } from '../api/superAdminApi';
 import type { SuperAdminUser } from '../api/superAdminApi';
 
 const UsersPage: React.FC = () => {
-  const navigate = useNavigate();
   const [showCreateDropdown, setShowCreateDropdown] = useState(false);
   const [createDialog, setCreateDialog] = useState<'interpreter' | 'csr' | 'manager' | 'customer' | null>(null);
+  const [tempRole, setTempRole] = useState<'interpreter' | 'csr' | 'manager' | 'customer' | null>(null);
+  const [editingUser, setEditingUser] = useState<SuperAdminUser | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   
-  // 2. Fixed: Users state with correct Type
   const [users, setUsers] = useState<SuperAdminUser[]>([]);
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [showRoleFilter, setShowRoleFilter] = useState(false);
+
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [createForm, setCreateForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    gender: 'Any',
-    language: '',
-    skill: '',
-    department: '',
-    enterprise: '',
+    firstName: '', lastName: '', email: '', phone: '', gender: 'Male',
+    language: '', skills: '', extension: '', password: '', confirmPassword: '', status: true
   });
 
   useEffect(() => {
-    if (!toast) return;
-    const timeout = window.setTimeout(() => setToast(null), 3600);
-    return () => window.clearTimeout(timeout);
-  }, [toast]);
+    const sampleData: SuperAdminUser[] = [
+      { id: '1', name: 'Zeeshan Ahmad', email: 'zeeshan@example.com', phone: '+92 300 1234567', role: 'Interpreter', extension: '101', language: 'Urdu', status: 'Active' },
+      { id: '2', name: 'Sarah Connor', email: 'sarah.c@tech.com', phone: '+1 555 9876543', role: 'CSR', extension: '202', language: 'English', status: 'Active' },
+    ];
+    const storedUsers = loadPersistedUsers();
+    fetchUsers().then((received) => {
+        const combined = [...sampleData, ...storedUsers, ...received];
+        setUsers(combined.filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i));
+    }).catch(() => setUsers(sampleData));
+  }, []);
 
-  const resetCreateForm = () => {
-    setCreateForm({
-      name: '', email: '', phone: '', gender: 'Any',
-      language: '', skill: '', department: '', enterprise: '',
-    });
+  // --- Handlers ---
+  const handleCancelClick = () => {
+    setTempRole(createDialog);
+    setCreateDialog(null); 
+    setShowCancelConfirm(true); 
   };
 
-  const handleCreateChange = (field: keyof typeof createForm, value: string) => {
-    setCreateForm((prev) => ({ ...prev, [field]: value }));
+  const confirmCancelUser = () => {
+    setShowCancelConfirm(false);
+    setTempRole(null);
+    setEditingUser(null); 
+    resetForm();
   };
 
-  const buildNewUser = (dialog: typeof createDialog): SuperAdminUser => {
-    const role = dialog === 'interpreter' ? 'Interpreter' : dialog === 'csr' ? 'CSR' : dialog === 'manager' ? 'Manager' : 'Customer';
-    const extension = String(100 + Math.floor(Math.random() * 900));
-    const language = createForm.language || 'English';
-
-    return {
-      id: Date.now().toString(),
-      name: createForm.name || `${role} User`,
-      email: createForm.email || `${role.toLowerCase()}@example.com`,
-      phone: createForm.phone || '+1 555 000 0000',
-      role: role as any,
-      extension,
-      language,
-      status: 'Active',
-    };
+  const continueEditing = () => {
+    setCreateDialog(tempRole); 
+    setShowCancelConfirm(false);
   };
 
-  const handleCreateSubmit = async (event: React.FormEvent) => {
+  const resetForm = () => {
+    setCreateForm({ firstName: '', lastName: '', email: '', phone: '', gender: 'Male', language: '', skills: '', extension: '', password: '', confirmPassword: '', status: true });
+  };
+
+  // --- FIX: Form Submit to update list ---
+  const handleCreateSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!createDialog) return;
-    
-    const newUser = buildNewUser(createDialog);
-    try {
-      const apiUser = await createUser(newUser);
-      setUsers((current) => [apiUser, ...current]);
-      setToast(`User created successfully`);
-    } catch (error) {
-      appendPersistedUser(newUser);
+
+    const newUser: SuperAdminUser = {
+      id: editingUser ? editingUser.id : Math.random().toString(36).substr(2, 9),
+      name: `${createForm.firstName} ${createForm.lastName}`,
+      email: createForm.email,
+      phone: createForm.phone,
+      role: editingUser ? editingUser.role : (createDialog ? createDialog.charAt(0).toUpperCase() + createDialog.slice(1) : 'User'),
+      extension: createForm.extension,
+      language: createForm.language || 'English',
+      status: createForm.status ? 'Active' : 'Inactive',
+    };
+
+    if (editingUser) {
+      setUsers((current) => current.map((u) => (u.id === editingUser.id ? newUser : u)));
+    } else {
       setUsers((current) => [newUser, ...current]);
-      setToast(`Request submitted offline`);
     }
+
     setCreateDialog(null);
-    resetCreateForm();
-  };
-
-  // UI Helper Functions
-  const createLabel = (dialog: typeof createDialog) => {
-    if (dialog === 'interpreter') return 'Add New Interpreter';
-    if (dialog === 'csr') return 'Add New CSR';
-    if (dialog === 'manager') return 'Add New Manager';
-    if (dialog === 'customer') return 'Add New Customer';
-    return '';
-  };
-
-  const handleCreateOpen = (dialog: typeof createDialog) => {
-    setCreateDialog(dialog);
-    setShowCreateDropdown(false);
-  };
-
-  const handleCloseModal = () => {
-    setCreateDialog(null);
-    resetCreateForm();
+    setEditingUser(null);
+    resetForm();
+    setShowSuccessModal(true);
   };
 
   const handleDeleteUser = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
-    
+    if (!window.confirm('Are you sure you want to delete this user?')) return;
     try {
       await deleteUser(id);
       removePersistedUser(id);
       setUsers((current) => current.filter((user) => user.id !== id));
       setToast('User deleted successfully');
-    } catch (error) {
-      setToast('Failed to delete user');
-    }
+      setTimeout(() => setToast(null), 3000);
+    } catch (error) { setToast('Failed to delete user'); }
   };
 
-  // Rendering Helpers
-  const renderModalField = (label: string, field: keyof typeof createForm, placeholder: string, type = 'text') => (
-    <div className="form-group">
-      <label className="form-label">{label}</label>
-      <input
-        className="form-input"
-        type={type}
-        value={createForm[field]}
-        onChange={(e) => handleCreateChange(field, e.target.value)}
-        placeholder={placeholder}
-        required
-      />
-    </div>
-  );
-
-  const renderModalSelect = (label: string, field: keyof typeof createForm, options: string[]) => (
-    <div className="form-group">
-      <label className="form-label">{label}</label>
-      <select
-        className="form-select"
-        value={createForm[field]}
-        onChange={(e) => handleCreateChange(field, e.target.value)}
-        required
-      >
-        <option value="">Select {label.toLowerCase()}</option>
-        {options.map((option) => (
-          <option key={option} value={option}>{option}</option>
-        ))}
-      </select>
-    </div>
-  );
-
-  useEffect(() => {
-    const storedUsers = loadPersistedUsers();
-    fetchUsers()
-      .then((received) => {
-        setUsers(storedUsers.length > 0 ? [...storedUsers, ...received] : received);
-      })
-      .catch(() => {
-        if (storedUsers.length > 0) setUsers(storedUsers);
-      });
-  }, []);
+  const filteredUsers = roleFilter === 'all' ? users : users.filter(user => user.role.toLowerCase() === roleFilter.toLowerCase());
 
   return (
     <div className="page-content">
-      {/* Modal */}
+      {toast && <div className="toast-message">{toast}</div>}
+
+      {/* --- Main Form Modal --- */}
       {createDialog && (
-        <div className="modal-backdrop" onClick={handleCloseModal}>
-          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{createLabel(createDialog)}</h3>
-              <button className="icon-button" onClick={handleCloseModal}><X size={20} /></button>
+        <div className="modal-backdrop">
+          <div className="modal-panel" style={{ maxWidth: '750px', borderRadius: '12px', padding: '0' }}>
+            <div className="modal-header" style={{ padding: '20px', borderBottom: '1px solid #eee' }}>
+              <h3 style={{ fontWeight: '700', margin: 0 }}>
+                {editingUser ? `Edit ${editingUser.role}` : `Add New ${createDialog.toUpperCase()}`}
+              </h3>
             </div>
-            <form className="form-grid" onSubmit={handleCreateSubmit}>
-              {renderModalField('Full Name', 'name', 'Enter name')}
-              {renderModalField('Email', 'email', 'email@example.com', 'email')}
-              {renderModalField('Phone', 'phone', '+92...')}
-              {createDialog !== 'customer' && renderModalSelect('Language', 'language', ['English', 'Spanish', 'French'])}
-              <div className="form-actions" style={{ gridColumn: '1 / -1' }}>
-                <button type="button" className="btn-secondary" onClick={handleCloseModal}>Cancel</button>
-                <button type="submit" className="btn-primary">Submit</button>
+            
+            <form onSubmit={handleCreateSubmit} style={{ padding: '25px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                <div className="form-group"><label className="form-label">First Name</label><input className="form-input" placeholder="Courtney" value={createForm.firstName} onChange={e => setCreateForm({...createForm, firstName: e.target.value})} required /></div>
+                <div className="form-group"><label className="form-label">Last Name</label><input className="form-input" placeholder="Alex" value={createForm.lastName} onChange={e => setCreateForm({...createForm, lastName: e.target.value})} required /></div>
+                <div className="form-group"><label className="form-label">Phone Number</label><input className="form-input" placeholder="+1 3456789101" value={createForm.phone} onChange={e => setCreateForm({...createForm, phone: e.target.value})} required /></div>
+                <div className="form-group"><label className="form-label">Email</label><input className="form-input" type="email" placeholder="example@mail.com" value={createForm.email} onChange={e => setCreateForm({...createForm, email: e.target.value})} required /></div>
+                <div className="form-group"><label className="form-label">Gender</label><select className="form-select" value={createForm.gender} onChange={e => setCreateForm({...createForm, gender: e.target.value})}><option>Male</option><option>Female</option></select></div>
+                <div className="form-group"><label className="form-label">Extension</label><input className="form-input" placeholder="Extension" value={createForm.extension} onChange={e => setCreateForm({...createForm, extension: e.target.value})} /></div>
+                <div className="form-group"><label className="form-label">Language</label><select className="form-select" value={createForm.language} onChange={e => setCreateForm({...createForm, language: e.target.value})}><option value="">Select Language</option><option>English</option><option>Urdu</option></select></div>
+                <div className="form-group"><label className="form-label">Interpreting Skills</label><select className="form-select" value={createForm.skills} onChange={e => setCreateForm({...createForm, skills: e.target.value})}><option value="">Select Skills</option><option>Medical</option><option>Legal</option></select></div>
+                <div className="form-group" style={{ position: 'relative' }}><label className="form-label">Password</label><input className="form-input" type={showPassword ? "text" : "password"} placeholder="********" value={createForm.password} onChange={e => setCreateForm({...createForm, password: e.target.value})} /><button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '10px', top: '35px', background: 'none', border: 'none', cursor: 'pointer' }}>{showPassword ? <EyeOff size={18} color="#999" /> : <Eye size={18} color="#999" />}</button></div>
+                <div className="form-group"><label className="form-label">Confirm Password</label><input className="form-input" type={showPassword ? "text" : "password"} placeholder="********" value={createForm.confirmPassword} onChange={e => setCreateForm({...createForm, confirmPassword: e.target.value})} /></div>
+                <div className="form-group"><label className="form-label">Status</label><div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}><span>Active</span><label className="switch"><input type="checkbox" checked={createForm.status} onChange={e => setCreateForm({...createForm, status: e.target.checked})} /><span className="slider round"></span></label></div></div>
+              </div>
+
+              <div className="form-actions" style={{ marginTop: '30px', display: 'flex', gap: '15px' }}>
+                <button type="button" className="btn-secondary" style={{ flex: 1, height: '45px' }} onClick={handleCancelClick}>Cancel</button>
+                <button type="submit" className="btn-primary" style={{ flex: 1, height: '45px' }}>
+                  {editingUser ? 'Update' : 'Create'} {createDialog}
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Header */}
+      {/* --- Cancel Confirmation Modal --- */}
+      {showCancelConfirm && (
+        <div className="modal-backdrop" style={{ zIndex: 1200 }}>
+          <div className="modal-panel" style={{ maxWidth: '400px', textAlign: 'center', borderRadius: '12px', padding: '30px' }}>
+              <h3 style={{ fontWeight: '700', marginBottom: '12px', color: '#111827' }}>
+                {editingUser ? 'Cancel Editing' : 'Cancel User Creation'}
+              </h3>
+              <p style={{ color: '#6B7280', fontSize: '14px', marginBottom: '24px' }}>
+                Are you sure you want to cancel? Any unsaved changes will be lost.
+              </p>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button className="btn-secondary" style={{ flex: 1, height: '42px' }} onClick={confirmCancelUser}>Yes, Cancel</button>
+                <button className="btn-primary" style={{ flex: 1, height: '42px', backgroundColor: '#EF4444' }} onClick={continueEditing}>Continue Editing</button>
+              </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- Success Modal --- */}
+      {showSuccessModal && (
+        <div className="modal-backdrop" style={{ zIndex: 1200 }}>
+          <div className="modal-panel" style={{ maxWidth: '350px', textAlign: 'center', borderRadius: '12px', padding: '30px' }}>
+              <h3 style={{ fontWeight: '700', marginBottom: '12px', color: '#111827' }}>
+                User {editingUser ? 'Updated' : 'Created'} Successfully
+              </h3>
+              <button className="btn-primary" style={{ width: '100%', height: '45px' }} onClick={() => { setShowSuccessModal(false); setEditingUser(null); }}>Continue</button>
+          </div>
+        </div>
+      )}
+
+      {/* --- View Header --- */}
       <div className="view-header">
-        <h2>Users</h2>
+        <h2>User</h2>
         <div className="header-actions">
-          <button className="btn-create" onClick={() => setShowCreateDropdown(!showCreateDropdown)}>
-            Create New User <ChevronDown size={18} />
-          </button>
-          {showCreateDropdown && (
-            <div className="dropdown-menu">
-              <div className="menu-item" onClick={() => handleCreateOpen('interpreter')}>New Interpreter</div>
-              <div className="menu-item" onClick={() => handleCreateOpen('csr')}>New CSR</div>
-              <div className="menu-item" onClick={() => handleCreateOpen('manager')}>New Manager</div>
-              <div className="menu-item" onClick={() => handleCreateOpen('customer')}>New Customer</div>
+           <div className="dropdown-container">
+            <div className="filter-select-box" onClick={() => setShowRoleFilter(!showRoleFilter)}>
+              <span>{roleFilter === 'all' ? 'All ' : roleFilter.charAt(0).toUpperCase() + roleFilter.slice(1)}</span>
+              <ChevronDown size={16} />
             </div>
-          )}
+            {showRoleFilter && (
+              <div className="dropdown-menu">
+                {['all', 'interpreter', 'csr', 'customer', 'manager'].map(role => (
+                  <div key={role} className={`menu-item ${roleFilter === role ? 'active-blue' : ''}`} onClick={() => { setRoleFilter(role); setShowRoleFilter(false); }}>
+                    {role.charAt(0).toUpperCase() + role.slice(1)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div style={{position: 'relative'}}>
+            <button className="btn-create" onClick={() => setShowCreateDropdown(!showCreateDropdown)}>Create New User <ChevronDown size={18} /></button>
+            {showCreateDropdown && (
+                <div className="dropdown-menu">
+                {['interpreter', 'csr', 'manager', 'customer'].map(type => (
+                    <div key={type} className="menu-item" onClick={() => { setCreateDialog(type as any); setShowCreateDropdown(false); setEditingUser(null); }}>New {type.toUpperCase()}</div>
+                ))}
+                </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Table */}
+      {/* --- Table Section --- */}
       <div className="table-card">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Name</th><th>Email</th><th>Phone</th><th>Role</th>
-              <th>Extension</th><th>Status</th><th>Edit</th><th>Delete</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id}>
-                <td>{user.name}</td>
-                <td>{user.email}</td>
-                <td>{user.phone}</td>
-                <td>{user.role}</td>
-                <td>{user.extension}</td>
-                <td>
-                  <span className={`badge ${user.status.toLowerCase()}`}>{user.status}</span>
-                </td>
-                <td><Edit3 size={18} className="icon-edit" onClick={() => navigate(`/super-admin/edit/${user.role.toLowerCase()}`)} /></td>
-                <td><Trash2 size={18} className="icon-delete" onClick={() => handleDeleteUser(user.id)} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="table-container">
+          <table className="data-table">
+            <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Status</th><th style={{ textAlign: 'center' }}>Actions</th></tr></thead>
+            <tbody>
+              {filteredUsers.map((user) => (
+                <tr key={user.id}>
+                  <td>{user.name}</td><td>{user.email}</td><td>{user.phone}</td>
+                  <td><span className="role-badge-new">{user.role}</span></td>
+                  <td><span className={`badge ${user.status.toLowerCase()}`}>{user.status}</span></td>
+                  <td style={{ textAlign: 'center' }}>
+                    <div className="actions-cell">
+                      <button className="action-btn-new edit-btn-new" onClick={() => { 
+                          setEditingUser(user); 
+                          setCreateDialog(user.role.toLowerCase() as any); 
+                          const [first, ...last] = user.name.split(' ');
+                          setCreateForm({...createForm, firstName: first, lastName: last.join(' '), email: user.email, phone: user.phone});
+                        }}>
+                        <Edit3 size={16} />
+                      </button>
+                      <button className="action-btn-new delete-btn-new" onClick={() => handleDeleteUser(user.id)}><Trash2 size={16} /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

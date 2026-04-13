@@ -1,9 +1,16 @@
-import axios, { type AxiosResponse } from 'axios';
+import type { AxiosResponse } from 'axios';
 
-const API = axios.create({
-  baseURL: 'http://10.1.1.72:4000',
-  headers: { 'Content-Type': 'application/json' },
-});
+// API calls remove kar di gayi hain. 
+// Ab ye service local mock data use karegi taake UI development mein rukawat na aaye.
+const mockAxiosResponse = <T>(data: T): Promise<AxiosResponse<ApiResponse<T>>> => {
+  return Promise.resolve({
+    data: { data, success: true, message: 'Mock Success' },
+    status: 200,
+    statusText: 'OK',
+    headers: {},
+    config: {} as any,
+  });
+};
 
 export interface FcmToken {
   deviceId: string;
@@ -66,31 +73,29 @@ export interface ApiResponse<T = any> {
 }
 
 export const authService = {
-  signup: (data: SignupRequest): Promise<AxiosResponse<ApiResponse<any>>> => {
-    const { fcmToken, platform, ...signupData } = data;
-    const finalData = {
-      ...signupData,
-      role: 'customer',
-      phone: '923001234567', 
-      enterprise: 'Default Enterprise',  
-      state: 'Default State',  
-      city: 'Default City',  
-      facility: ['Default Facility']  
-    };
-    return API.post('/api/auth/signup', finalData);
-  },
-  login: (data: LoginRequest): Promise<AxiosResponse<ApiResponse<LoginResponse>>> => API.post('/api/auth/login', data),
-  me: (): Promise<AxiosResponse<ApiResponse<{ user: AuthUser }>>> => API.get('/api/auth/me'),
-  requestForgetPassword: (email: string, platform = 'web'): Promise<AxiosResponse<ApiResponse<any>>> => API.post('/api/auth/request-forget-password', { email, platform }),
-  sendOTP: (email: string, platform = 'web'): Promise<AxiosResponse<ApiResponse<any>>> => API.post('/api/auth/request-forget-password', { email, platform }),
-  forgotPassword: (email: string, platform = 'web'): Promise<AxiosResponse<ApiResponse<any>>> => API.post('/api/auth/request-forget-password', { email, platform }),
-  resendOtp: (data: { email: string }): Promise<AxiosResponse<ApiResponse<any>>> => API.post('/api/auth/resend-otp', data),
-  verifyOTP: (data: { email: string; otp: string }): Promise<AxiosResponse<ApiResponse<any>>> => API.post('/api/auth/otp-verification', data),
-  resetPassword: (data: { email: string; otp: string; password: string }): Promise<AxiosResponse<ApiResponse<any>>> => API.patch('/api/auth/reset-password', data),
-  updatePassword: (data: { currentPassword: string; newPassword: string; confirmPassword: string }): Promise<AxiosResponse<ApiResponse<any>>> => API.patch('/api/auth/update-password', data),
-  forgetAccessCode: (data: { email: string }): Promise<AxiosResponse<ApiResponse<any>>> => API.patch('/api/auth/forget-access-code', data),
-  accessCodeVerification: (data: { accessCode: string }): Promise<AxiosResponse<ApiResponse<any>>> => API.post('/api/auth/access-code-verification', data),
-  accessCodeSearch: (data: { query: string }): Promise<AxiosResponse<ApiResponse<any>>> => API.post('/api/auth/access-code-search', data),
-  validateCriticalFields: (data: { email?: string; phone?: string }): Promise<AxiosResponse<ApiResponse<any>>> => API.post('/api/auth/validate-critical-fields', data),
-  validateAccessCode: (): Promise<AxiosResponse<ApiResponse<any>>> => API.get('/api/auth/validate-access-code'),
+  signup: (data: SignupRequest) => mockAxiosResponse({}),
+  login: (data: LoginRequest) => mockAxiosResponse<LoginResponse>({
+    accessToken: 'mock_access_token',
+    user: {
+      id: 'mock_id_123',
+      email: data.email,
+      firstName: 'Super',
+      lastName: 'Admin',
+      role: 'superAdmin',
+      status: 'Active'
+    }
+  }),
+  me: () => mockAxiosResponse({ user: { id: 'mock_id_123', role: 'superAdmin' } }),
+  requestForgetPassword: (email: string) => mockAxiosResponse({}),
+  sendOTP: (email: string) => mockAxiosResponse({}),
+  forgotPassword: (email: string) => mockAxiosResponse({}),
+  resendOtp: (data: { email: string }) => mockAxiosResponse({}),
+  verifyOTP: (data: { email: string; otp: string }) => mockAxiosResponse({}),
+  resetPassword: (data: any) => mockAxiosResponse({}),
+  updatePassword: (data: any) => mockAxiosResponse({}),
+  forgetAccessCode: (data: any) => mockAxiosResponse({}),
+  accessCodeVerification: (data: any) => mockAxiosResponse({}),
+  accessCodeSearch: (data: any) => mockAxiosResponse([]),
+  validateCriticalFields: (data: any) => mockAxiosResponse({}),
+  validateAccessCode: () => mockAxiosResponse({}),
 };

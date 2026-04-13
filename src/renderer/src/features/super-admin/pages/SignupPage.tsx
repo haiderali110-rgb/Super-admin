@@ -79,7 +79,7 @@ const SignupPage: React.FC = () => {
 
       {/* RIGHT SIDE */}
       <div className="right-panel">
-        <div className="form-card">
+        <div className="auth-form-content">
           <div className="header-text">
             <h2>Create Account</h2>
             <p>Enter your details to create your account.</p>

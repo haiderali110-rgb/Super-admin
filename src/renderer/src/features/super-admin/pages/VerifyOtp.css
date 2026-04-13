@@ -2,54 +2,69 @@
 .split-screen-container {
     display: flex;
     height: 100vh;
-    width: 100%;
+    width: 100vw;
     overflow: hidden;
     background-color: #ffffff;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 
 /* LEFT PANEL (Matching LoginPage exactly) */
 .left-panel {
-    flex: 1;
-    background-color: #5B8DEF;
+    flex: 1.1;
+    background-color: #4f86d4;
     display: flex;
+    align-items: center;
     justify-content: center; 
-    padding-top: 80px;
+    padding: 40px;
+    position: relative;
 }
 
- 
+.logo-section {
+    text-align: center;
+    width: 100%;
+}
 
- 
+.logo-img {
+    height: 80px;
+    position: absolute;
+    top: 60px;
+    left: 170px;
+    margin-top: 20px;
+}
 
- 
-
- 
- 
+.side-visual {
+    margin-top: 100px;
+    width: 500px;
+    height: 500px;
+}
 
 /* RIGHT PANEL */
 .right-panel {
     flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+     
+     
+    padding: 40px;
     background-color: #ffffff;
+    position: relative;
 }
 
-.form-card {
+.auth-form-content {
+    background: transparent;
     width: 100%;
-    max-width: 420px;
-    padding: 0 40px;
+    max-width: 400px;
+    box-shadow: none;
+     
 }
 
 .header-text h2 {
     font-size: 50px;
     font-weight: 600;
-    color: #5B8DEF;
+    color: #4f86d4;
     margin-bottom: 8px;
 }
 
 .header-text p {
-    color: #5B8DEF;
+    color: #4f86d4;
     font-size: 16px;
     margin-bottom: 35px;
     line-height: 1.5;
@@ -78,32 +93,31 @@
 
 .otp-box:focus {
     outline: none;
-    border-color: #5B8DEF;
+    border-color: #4f86d4;
     background-color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(91, 141, 239, 0.1);
+    box-shadow: none;
 }
 
 .login-btn {
-    width: 100%;
-    padding: 16px;
-    background-color: #5B8DEF;
+    background-color: #4f86d4;
     color: white;
+    padding: 15px;
+    border-radius: 8px;
     border: none;
-    border-radius: 16px;
-    font-size: 18px;
-    font-weight: 700;
+    font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
     cursor: pointer;
+    margin-top: 10px;
+    font-size: 16px;
 }
 
 .footer-copyright {
-    margin-top: 60px;
-    text-align: center;
-    color: #94a3b8;
+    margin-top: 30px;
     font-size: 14px;
+    color: #64748b;
 }
 
 @media (max-width: 1024px) {

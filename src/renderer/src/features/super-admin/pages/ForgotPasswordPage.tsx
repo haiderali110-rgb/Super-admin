@@ -14,7 +14,7 @@ const ForgotPasswordPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await authService.sendOTP(email, 'web');
+      const response = await authService.sendOTP(email, '');
       if (response.status === 200) {
         alert('Verification code sent to your email.');
         navigate('/verify-otp', { state: { flow: 'forgot', email } });
@@ -49,10 +49,10 @@ const ForgotPasswordPage: React.FC = () => {
 
       {/* --- RIGHT SIDE --- */}
       <div className="right-panel">
-        <div className="form-card">
+        <div className="auth-form-content">
           
           <div className="header-text">
-            <h2>Reset Password</h2>
+            <h2>Reset Password </h2>
             <p>Enter your email address to receive a verification code.</p>
           </div>
 
@@ -84,12 +84,10 @@ const ForgotPasswordPage: React.FC = () => {
             </button>
           </form>
 
-          <div className="footer-copyright">
-            <p>© 2026 Beloz Ecosystem. All rights reserved.</p>
-          </div>
+           
         </div>
       </div>
-    </div>
+      </div>
   );
 };
 
