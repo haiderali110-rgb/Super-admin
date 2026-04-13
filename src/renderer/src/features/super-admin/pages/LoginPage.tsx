@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, MoveRight, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { authService } from '../../super-admin/api/authService';
 import './LoginPage.css'; 
 
@@ -50,20 +50,24 @@ const LoginPage: React.FC = () => {
   return (
     <div className="login-wrapper-main">
       <div className="login-container-card">
-        {/* Left Section */}
         <div className="blue-panel">
           <div className="panel-content">
-            <img src="/src/assets/icons/Group.png" alt="Beloz Logo" className="brand-logo" />
-            <img src="/src/assets/images/img learning.png" alt="Illustration" className="main-illustration" />
+            <div className="brand-lockup">
+              <img src="/src/assets/icons/Group.png" alt="Beloz Logo" className="brand-logo" />
+            </div>
+
+            <div className="illustration-wrap">
+              <img src="/src/assets/images/img learning.png" alt="Illustration" className="main-illustration" />
+            </div>
           </div>
         </div>
 
-        {/* Right Section */}
         <div className="form-panel">
-          <div className="auth-form-content">
+          <div className="auth-form-shell">
+            <div className="auth-form-content">
             <div className="auth-header">
               <h1>Welcome Back :)</h1>
-              <p> Please enter your <br/> login details below! </p>
+              <p>Please enter your<br />login details below!</p>
             </div>
 
             <form onSubmit={handleSubmit} className="login-form-main">
@@ -71,7 +75,7 @@ const LoginPage: React.FC = () => {
                 <Mail className="input-icon" size={18} />
                 <input 
                   type="email" 
-                  placeholder="Email address" 
+                  placeholder="Enter your email here"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required 
@@ -82,7 +86,7 @@ const LoginPage: React.FC = () => {
                 <Lock className="input-icon" size={18} />
                 <input 
                   type={showPassword ? 'text' : 'password'} 
-                  placeholder="Password" 
+                  placeholder="Enter your password here"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required 
@@ -97,8 +101,7 @@ const LoginPage: React.FC = () => {
               </div>
 
               <button type="submit" className="submit-btn-blue" disabled={loading}>
-                <MoveRight size={20} />
-                <span>{loading ? 'Processing...' : 'Sign In'}</span>
+                <span>{loading ? 'Processing...' : 'Login'}</span>
               </button>
             </form>
 
@@ -106,8 +109,7 @@ const LoginPage: React.FC = () => {
               Don't have an account? <span onClick={() => navigate('/signup')}>Sign Up</span>
             </div>
           </div>
-          
-           
+          </div>
         </div>
       </div>
     </div>

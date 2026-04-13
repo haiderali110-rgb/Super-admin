@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
 import { authService } from '../api/authService';
 import './VerifyOtp.css'; 
 
@@ -63,35 +62,34 @@ const VerifyOtpPage: React.FC = () => {
   };
 
   return (
-    <div className="split-screen-container">
-      
-      {/* --- LEFT SIDE: Matching LoginPage --- */}
-      <div className="left-panel">
-        <div className="logo-section">
-          <div className="logo-placeholder">
+    <div className="otp-screen">
+      <div className="otp-left-panel">
+        <div className="otp-panel-content">
+          <div className="otp-brand-lockup">
             <img 
               src="/src/assets/icons/Group.png" 
               alt="Logo" 
-              className="logo-img" 
+              className="otp-logo-img" 
             />
           </div>
-          
-          <img src="/src/assets/images/img learning.png" alt="Illustration" className="side-visual" />
+
+          <div className="otp-illustration-wrap">
+            <img src="/src/assets/images/img learning.png" alt="Illustration" className="otp-side-visual" />
+          </div>
         </div>
       </div>
 
-      {/* --- RIGHT SIDE: OTP Verification --- */}
-      <div className="right-panel">
-        <div className="auth-form-content">
-          
-          <div className="header-text">
+      <div className="otp-right-panel">
+        <div className="otp-form-shell">
+          <div className="otp-form-content">
+          <div className="otp-header-text">
             <h2>Enter OTP</h2>
-            <p>Please enter  OTP we've send to <br />superadmin@gmail.com</p>
+            <p>Please enter OTP we've send to<br />{email || 'warren.wade@example.com'}</p>
           </div>
 
-          <form className="auth-form" onSubmit={handleSubmit}>
+          <form className="otp-form" onSubmit={handleSubmit}>
             
-            <div className="otp-input-container">
+            <div className="otp-input-row">
               {otpArray.map((digit, idx) => (
                 <input
                   key={idx}
@@ -106,22 +104,18 @@ const VerifyOtpPage: React.FC = () => {
                 />
               ))}
             </div>
-              <p className="resend-text">
-            Didn't receive the code? <span className="resend-link">Resend code</span>
-          </p>
+            <p className="otp-resend-text">
+              Didn't Receive Code? <span className="otp-resend-link">00:00</span>
+            </p>
 
-            <button type="submit" className="login-btn" disabled={loading}>
-              <span>{loading ? 'Verifying...' : 'Verify code'}</span>
-              <ArrowRight size={20}/>
+            <button type="submit" className="otp-submit-btn" disabled={loading}>
+              <span>{loading ? 'Verifying...' : 'Next'}</span>
             </button>
           </form>
-
-        
-
-          
+          </div>
         </div>
       </div>
-      </div>
+    </div>
   );
 };
 

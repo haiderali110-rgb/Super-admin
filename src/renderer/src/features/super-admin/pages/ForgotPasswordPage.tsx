@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Send } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { authService } from '../api/authService';
 import './ForgotPassword.css'; 
 
@@ -31,41 +31,39 @@ const ForgotPasswordPage: React.FC = () => {
   };
 
   return (
-    <div className="split-screen-container">
-      
-      {/* --- LEFT SIDE --- */}
-      <div className="left-panel">
-        <div className="logo-section">
-          <div className="logo-placeholder">
+    <div className="forgot-screen">
+      <div className="forgot-left-panel">
+        <div className="forgot-panel-content">
+          <div className="forgot-brand-lockup">
             <img 
               src="/src/assets/icons/Group.png" 
               alt="Logo" 
-              className="logo-img" 
+              className="forgot-logo-img" 
             />
           </div>
-          <img src="/src/assets/images/img learning.png" alt="Illustration" className="side-visual" />
+
+          <div className="forgot-illustration-wrap">
+            <img src="/src/assets/images/img learning.png" alt="Illustration" className="forgot-side-visual" />
+          </div>
         </div>
       </div>
 
-      {/* --- RIGHT SIDE --- */}
-      <div className="right-panel">
-        <div className="auth-form-content">
-          
-          <div className="header-text">
-            <h2>Reset Password </h2>
-            <p>Enter your email address to receive a verification code.</p>
+      <div className="forgot-right-panel">
+        <div className="forgot-form-shell">
+          <div className="forgot-form-content">
+          <div className="forgot-header-text">
+            <h2>Forgot password</h2>
+            <p>Please provide the email address<br />linked to your account.</p>
           </div>
 
-          {/* onSubmit function yahan lagaya gaya hai */}
-          <form className="auth-form" onSubmit={handleSubmit}>
-            
-            <div className="input-group">
-              <div className="input-with-icon">
-                <Mail className="field-icon" size={20} />
+          <form className="forgot-form" onSubmit={handleSubmit}>
+            <div className="forgot-input-group">
+              <div className="forgot-input-with-icon">
+                <Mail className="forgot-field-icon" size={20} />
                 <input 
                   type="email" 
-                  placeholder="Email address" 
-                  className="login-input"
+                  placeholder="Enter your email"
+                  className="forgot-input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -73,21 +71,18 @@ const ForgotPasswordPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Button type "submit" hona chahiye taaki 'required' kaam kare */}
             <button 
               type="submit" 
-              className="login-btn"
+              className="forgot-submit-btn"
               disabled={loading}
             >
-              <Send size={18} />
-              <span>{loading ? 'Sending...' : 'Send verification code'}</span>
+              <span>{loading ? 'Sending...' : 'Next'}</span>
             </button>
           </form>
-
-           
+          </div>
         </div>
       </div>
-      </div>
+    </div>
   );
 };
 

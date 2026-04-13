@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Edit3, Trash2, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import './user.css';
-import { fetchUsers, deleteUser, loadPersistedUsers, removePersistedUser } from '../api/superAdminApi';
+import { fetchUsersWithStatus, deleteUser, loadPersistedUsers, removePersistedUser } from '../api/superAdminApi';
 import type { SuperAdminUser } from '../api/superAdminApi';
 
 const UsersPage: React.FC = () => {
@@ -25,15 +25,29 @@ const UsersPage: React.FC = () => {
   });
 
   useEffect(() => {
-    const sampleData: SuperAdminUser[] = [
-      { id: '1', name: 'Zeeshan Ahmad', email: 'zeeshan@example.com', phone: '+92 300 1234567', role: 'Interpreter', extension: '101', language: 'Urdu', status: 'Active' },
-      { id: '2', name: 'Sarah Connor', email: 'sarah.c@tech.com', phone: '+1 555 9876543', role: 'CSR', extension: '202', language: 'English', status: 'Active' },
-    ];
     const storedUsers = loadPersistedUsers();
-    fetchUsers().then((received) => {
-        const combined = [...sampleData, ...storedUsers, ...received];
+    fetchUsersWithStatus().then((result) => {
+        const combined = [...storedUsers, ...result.users];
         setUsers(combined.filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i));
-    }).catch(() => setUsers(sampleData));
+        if (result.ok) {
+          console.log('[Users API] Success:', {
+            statusCode: result.statusCode,
+            source: result.source,
+            message: result.message,
+            totalUsers: result.users.length,
+          });
+        } else {
+          console.error('[Users API] Failed:', {
+            statusCode: result.statusCode,
+            source: result.source,
+            message: result.message,
+            totalUsers: result.users.length,
+          });
+        }
+    }).catch(() => {
+      setUsers(storedUsers);
+      console.error('[Users API] Unexpected error while loading users.');
+    });
   }, []);
 
   // --- Handlers ---

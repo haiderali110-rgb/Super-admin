@@ -51,33 +51,32 @@ const ResetPasswordPage: React.FC = () => {
 
   return (
     <div className="reset-container">
-      
-      {/* --- LEFT SIDE: Brand Section --- */}
       <div className="reset-left-panel">
-        <div className="reset-logo-section">
-          <div className="reset-logo-wrapper">
+        <div className="reset-panel-content">
+          <div className="reset-brand-lockup">
             <img 
               src="/src/assets/icons/Group.png" 
               alt="Logo" 
               className="reset-logo-img" 
             />
           </div>
-         
-          <img 
-            src="/src/assets/images/img learning.png" 
-            alt="Learning illustration" 
-            className="reset-side-visual"
-          />
+
+          <div className="reset-illustration-wrap">
+            <img 
+              src="/src/assets/images/img learning.png" 
+              alt="Learning illustration" 
+              className="reset-side-visual"
+            />
+          </div>
         </div>
       </div>
 
-      {/* --- RIGHT SIDE: Reset Password Form --- */}
       <div className="reset-right-panel">
-        <div className="reset-form-container">
-          
+        <div className="reset-form-shell">
+          <div className="reset-form-container">
           <div className="reset-header-text">
-            <h2>Reset password</h2> <br/>
-            <p>Create a strong and <br/> secure password</p><br/>
+            <h2>Reset password</h2>
+            <p>Create a strong and secure password</p>
           </div>
 
           <form className="reset-main-form" onSubmit={handleSubmit}>
@@ -87,8 +86,8 @@ const ResetPasswordPage: React.FC = () => {
               <div className="reset-input-wrapper">
                 <Lock className="reset-field-icon" size={20} />
                 <input 
-                  type="password" 
-                  placeholder="New password" 
+                  type={showPassword ? 'text' : 'password'} 
+                  placeholder="Enter your New password" 
                   className="reset-input-field"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -105,16 +104,16 @@ const ResetPasswordPage: React.FC = () => {
               <div className="reset-input-wrapper">
                 <KeyRound className="reset-field-icon" size={20} />
                 <input 
-                  type="password" 
-                  placeholder="Confirm password" 
+                  type={showConfirmPassword ? 'text' : 'password'} 
+                  placeholder="Enter your Confirm password" 
                   className="reset-input-field"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   minLength={8}
                 />
-                <button type="button" className="eye-btn" onClick={() => setShowPassword(!showPassword)}>
-                                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                <button type="button" className="eye-btn" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
               </div>
             </div>
@@ -122,11 +121,10 @@ const ResetPasswordPage: React.FC = () => {
              
 
             <button type="submit" className="reset-submit-btn" disabled={loading}>
-              <span>{loading ? 'Resetting...' : 'Reset password'}</span>
+              <span>{loading ? 'Resetting...' : 'Next'}</span>
             </button>
           </form>
-
-           
+          </div>
         </div>
       </div>
     </div>

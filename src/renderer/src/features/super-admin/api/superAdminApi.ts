@@ -1,3 +1,5 @@
+import { SUPER_ADMIN_ENDPOINTS, buildApiUrl } from './endpoints';
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -49,53 +51,279 @@ export interface LineExtension {
   status: string;
 }
 
-const STORAGE_KEYS = {
-  users: 'beloz-super-admin-users',
-  languages: 'beloz-super-admin-languages',
-  lines: 'beloz-super-admin-lines',
-  history: (type: string) => `beloz-super-admin-history-${type}`,
+export interface FetchUsersResult {
+  users: SuperAdminUser[];
+  ok: boolean;
+  statusCode?: number;
+  source: 'remote' | 'local';
+  message: string;
+}
+
+const USER_STORAGE_KEY = 'beloz-super-admin-users';
+const DELETED_USER_IDS_KEY = 'beloz-super-admin-users-deleted';
+
+const getLocalStorage = (): Storage | null => {
+  if (typeof window === 'undefined') return null;
+  return window.localStorage;
 };
 
-const loadFromStorage = <T>(key: string, defaultData: T): T => {
-  if (typeof window === 'undefined') return defaultData;
+const readJson = <T>(key: string, fallback: T): T => {
+  const storage = getLocalStorage();
+  if (!storage) return fallback;
+
   try {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return defaultData;
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(defaultData)) {
-      return Array.isArray(parsed) ? (parsed as T) : defaultData;
+    const raw = storage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+};
+
+const writeJson = <T>(key: string, value: T): void => {
+  const storage = getLocalStorage();
+  if (!storage) return;
+
+  try {
+    storage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore localStorage failures
+  }
+};
+
+const normalizeUser = (raw: Record<string, unknown>, idx: number): SuperAdminUser => {
+  const firstName = (raw.firstName as string) ?? '';
+  const lastName = (raw.lastName as string) ?? '';
+  const fullName = `${firstName} ${lastName}`.trim();
+  const rawStatus = raw.status;
+
+  const statusValue =
+    typeof rawStatus === 'boolean'
+      ? rawStatus
+        ? 'Active'
+        : 'Inactive'
+      : (rawStatus as string) || 'Active';
+
+  return {
+    id:
+      String(raw.id ?? raw._id ?? raw.userId ?? `api-user-${idx + 1}`),
+    name:
+      (raw.name as string) ||
+      fullName ||
+      (raw.username as string) ||
+      'Unknown User',
+    email: (raw.email as string) || '',
+    phone: (raw.phone as string) || (raw.phoneNumber as string) || '',
+    role: (raw.role as string) || (raw.userType as string) || (raw.type as string) || 'User',
+    extension: (raw.extension as string) || (raw.extensionNumber as string) || (raw.ext as string) || '',
+    language: (raw.language as string) || (raw.preferredLanguage as string) || '',
+    status: statusValue,
+    department: (raw.department as string) || undefined,
+    gender: (raw.gender as string) || undefined,
+  };
+};
+
+const extractUsersArray = (payload: unknown): Record<string, unknown>[] => {
+  if (Array.isArray(payload)) {
+    return payload.filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null);
+  }
+
+  if (typeof payload === 'object' && payload !== null) {
+    const maybeObj = payload as Record<string, unknown>;
+
+    if (Array.isArray(maybeObj.data)) {
+      return maybeObj.data.filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null);
     }
-    return (parsed as T) ?? defaultData;
-  } catch {
-    return defaultData;
+
+    if (typeof maybeObj.data === 'object' && maybeObj.data !== null && Array.isArray((maybeObj.data as Record<string, unknown>).users)) {
+      return ((maybeObj.data as Record<string, unknown>).users as unknown[]).filter(
+        (item): item is Record<string, unknown> => typeof item === 'object' && item !== null,
+      );
+    }
+
+    if (Array.isArray(maybeObj.users)) {
+      return maybeObj.users.filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null);
+    }
   }
+
+  return [];
 };
 
-const saveToStorage = <T>(key: string, data: T): void => {
-  if (typeof window === 'undefined') return;
+const mergeUsers = (remoteUsers: SuperAdminUser[], localUsers: SuperAdminUser[], deletedIds: string[]): SuperAdminUser[] => {
+  const deletedSet = new Set(deletedIds);
+  const map = new Map<string, SuperAdminUser>();
+
+  remoteUsers.forEach((user) => {
+    if (!deletedSet.has(user.id)) {
+      map.set(user.id, user);
+    }
+  });
+
+  localUsers.forEach((user) => {
+    if (!deletedSet.has(user.id)) {
+      map.set(user.id, user);
+    }
+  });
+
+  return Array.from(map.values());
+};
+
+export const fetchUsersWithStatus = async (): Promise<FetchUsersResult> => {
+  const localUsers = readJson<SuperAdminUser[]>(USER_STORAGE_KEY, []);
+  const deletedIds = readJson<string[]>(DELETED_USER_IDS_KEY, []);
+  const token = typeof window !== 'undefined' ? window.localStorage.getItem('beloz_auth_token') : null;
+  const storedAuthUser = typeof window !== 'undefined' ? window.localStorage.getItem('beloz_auth_user') : null;
+
+  let requesterRole = 'superAdmin';
+  const roleMap: Record<string, string> = {
+    superadmin: 'superAdmin',
+    'web-manager': 'web-manager',
+    manager: 'web-manager',
+    'mobile-manager': 'mobile-manager',
+    customer: 'customer',
+    'mobile-customer': 'mobile-customer',
+    interpreter: 'web-interpreter',
+    'web-interpreter': 'web-interpreter',
+    'mobile-interpreter': 'mobile-interpreter',
+    csr: 'csr',
+  };
   try {
-    window.localStorage.setItem(key, JSON.stringify(data));
+    if (storedAuthUser) {
+      const parsed = JSON.parse(storedAuthUser) as { role?: string };
+      if (parsed?.role && typeof parsed.role === 'string') {
+        const normalizedRole = parsed.role.toLowerCase();
+        requesterRole = roleMap[normalizedRole] || 'superAdmin';
+      }
+    }
   } catch {
-    // ignore storage errors
+    // fallback to default role
+  }
+
+  const payload = {
+    role: requesterRole,
+    activityStatus: 'active',
+    recordPerPage: 500,
+    pageNumber: 1,
+    sort: { createdAt: -1 },
+  };
+  const requestUrl = buildApiUrl(SUPER_ADMIN_ENDPOINTS.userGet);
+
+  console.log('[Users API] Request start', {
+    url: requestUrl,
+    method: 'POST',
+    hasToken: Boolean(token),
+    payload,
+  });
+
+  try {
+    const response = await fetch(requestUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+
+    console.log('[Users API] Response received', {
+      url: requestUrl,
+      status: response.status,
+      ok: response.ok,
+    });
+
+    if (!response.ok) {
+      return {
+        users: mergeUsers([], localUsers, deletedIds),
+        ok: false,
+        statusCode: response.status,
+        source: 'local',
+        message: `Users API failed (${response.status}). Showing local data.`,
+      };
+    }
+
+    const payload: unknown = await response.json();
+    const users = extractUsersArray(payload).map((user, idx) => normalizeUser(user, idx));
+
+    return {
+      users: mergeUsers(users, localUsers, deletedIds),
+      ok: true,
+      statusCode: response.status,
+      source: 'remote',
+      message: 'Users loaded successfully from server.',
+    };
+  } catch (error) {
+    console.error('[Users API] Network/Fetch error', {
+      url: requestUrl,
+      error,
+    });
+    return {
+      users: mergeUsers([], localUsers, deletedIds),
+      ok: false,
+      source: 'local',
+      message: 'Could not connect to Users API. Showing local data.',
+    };
   }
 };
 
-// Mock implementations to sync with Figma design without backend errors
-export const fetchUsers = async (): Promise<SuperAdminUser[]> => [
-  { id: '1', name: 'Jane Cooper', email: 'jane@example.com', phone: '555-0110', role: 'Interpreter', extension: '492', language: 'French', status: 'Active' },
-  { id: '2', name: 'Wade Warren', email: 'wade@example.com', phone: '555-0111', role: 'CSR', extension: '798', language: 'English', status: 'Inactive' },
-  { id: '3', name: 'Esther Howard', email: 'esther@example.com', phone: '555-0112', role: 'Interpreter', extension: '877', language: 'German', status: 'Active' },
-  { id: '4', name: 'Cameron Williamson', email: 'cameron@example.com', phone: '555-0113', role: 'Manager', extension: '122', language: 'Urdu', status: 'Active' },
-];
+export const fetchUsers = async (): Promise<SuperAdminUser[]> => {
+  const result = await fetchUsersWithStatus();
+  return result.users;
+};
 
 export const fetchUser = async (id: string): Promise<SuperAdminUser> => {
   const users = await fetchUsers();
-  return users.find(u => u.id === id) || users[0];
+  return (
+    users.find((u) => u.id === id) ||
+    users[0] || {
+      id: 'fallback-user',
+      name: 'Unknown User',
+      email: '',
+      phone: '',
+      role: 'User',
+      extension: '',
+      language: '',
+      status: 'Active',
+    }
+  );
 };
 
-export const createUser = async (user: any) => ({ id: Date.now().toString(), ...user });
-export const updateUser = async (id: string, user: any) => ({ id, ...user });
-export const deleteUser = async (_id: string) => Promise.resolve();
+export const createUser = async (user: Omit<SuperAdminUser, 'id'>): Promise<SuperAdminUser> => {
+  const created: SuperAdminUser = {
+    id: `local-${Date.now()}`,
+    ...user,
+  };
+
+  appendPersistedUser(created);
+  return created;
+};
+
+export const updateUser = async (id: string, user: Partial<SuperAdminUser>): Promise<SuperAdminUser> => {
+  const users = loadPersistedUsers();
+  const existing = users.find((u) => u.id === id);
+
+  const updated: SuperAdminUser = {
+    id,
+    name: user.name ?? existing?.name ?? 'Unknown User',
+    email: user.email ?? existing?.email ?? '',
+    phone: user.phone ?? existing?.phone ?? '',
+    role: user.role ?? existing?.role ?? 'User',
+    extension: user.extension ?? existing?.extension ?? '',
+    language: user.language ?? existing?.language ?? '',
+    status: user.status ?? existing?.status ?? 'Active',
+    department: user.department ?? existing?.department,
+    gender: user.gender ?? existing?.gender,
+  };
+
+  const next = users.filter((u) => u.id !== id);
+  next.unshift(updated);
+  savePersistedUsers(next);
+
+  return updated;
+};
+
+export const deleteUser = async (id: string): Promise<void> => {
+  removePersistedUser(id);
+};
 
 export const requestOtp = async (_phone: string) => ({ otpRequestId: 'mock_otp_123' });
 export const verifyOtp = async (_id: string, _code: string) => ({ verified: true });
@@ -118,7 +346,7 @@ export const fetchHistory = async (type: string): Promise<HistoryRow[]> => {
     'web-manager': [
       { id: '1', enterprise: 'Admin Portal', datetime: '12 Aug, 2023 / 09:12 am', accessCode: '772211', duration: '00:28:46' },
       { id: '2', enterprise: 'Support Console', datetime: '13 Aug, 2023 / 03:50 pm', accessCode: '554433', duration: '00:19:05' },
-    ]
+    ],
   };
   return mockRecords[type] || mockRecords.interpreter;
 };
@@ -131,8 +359,8 @@ export const fetchLanguages = async (): Promise<LanguageRate[]> => [
   { _id: '5', language: 'German', languageGroup: 'Europe', normalCallRate: 13, emergencyCallRate: 19, status: 'Inactive' },
 ];
 
-export const createLanguage = async (l: any) => ({ _id: Date.now().toString(), ...l });
-export const updateLanguage = async (id: string, l: any) => ({ _id: id, ...l });
+export const createLanguage = async (l: unknown) => ({ _id: Date.now().toString(), ...((l as object) || {}) });
+export const updateLanguage = async (id: string, l: unknown) => ({ _id: id, ...((l as object) || {}) });
 export const deleteLanguage = async (_id: string) => Promise.resolve();
 
 export const fetchLanguageGroups = async (): Promise<LanguageGroup[]> => [
@@ -147,7 +375,26 @@ export const fetchLines = async (): Promise<LineExtension[]> => [
   { id: '3', lineName: 'Billing Line', extensionNumber: '1047', assignedTo: 'Finance', status: 'Inactive' },
 ];
 
-export const loadPersistedUsers = () => [];
-export const savePersistedUsers = (_u: any) => {};
-export const appendPersistedUser = (_u: any) => {};
-export const removePersistedUser = (_id: string) => {};
+export const loadPersistedUsers = (): SuperAdminUser[] => {
+  return readJson<SuperAdminUser[]>(USER_STORAGE_KEY, []);
+};
+
+export const savePersistedUsers = (users: SuperAdminUser[]): void => {
+  writeJson(USER_STORAGE_KEY, users);
+};
+
+export const appendPersistedUser = (user: SuperAdminUser): void => {
+  const users = loadPersistedUsers();
+  const next = [user, ...users.filter((u) => u.id !== user.id)];
+  savePersistedUsers(next);
+};
+
+export const removePersistedUser = (id: string): void => {
+  const users = loadPersistedUsers().filter((u) => u.id !== id);
+  savePersistedUsers(users);
+
+  const deleted = readJson<string[]>(DELETED_USER_IDS_KEY, []);
+  if (!deleted.includes(id)) {
+    writeJson(DELETED_USER_IDS_KEY, [...deleted, id]);
+  }
+};
