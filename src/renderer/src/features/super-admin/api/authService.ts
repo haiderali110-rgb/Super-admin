@@ -1,16 +1,19 @@
-import type { AxiosResponse } from 'axios';
+import axios, { type AxiosResponse } from 'axios';
 
-// API calls remove kar di gayi hain. 
-// Ab ye service local mock data use karegi taake UI development mein rukawat na aaye.
-const mockAxiosResponse = <T>(data: T): Promise<AxiosResponse<ApiResponse<T>>> => {
-  return Promise.resolve({
-    data: { data, success: true, message: 'Mock Success' },
-    status: 200,
-    statusText: 'OK',
-    headers: {},
-    config: {} as any,
-  });
-};
+const API_URL = 'http://10.1.1.72:4000/api';
+
+export const api = axios.create({
+  baseURL: API_URL,
+});
+
+// Request interceptor to add auth token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('beloz_auth_token');
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 export interface FcmToken {
   deviceId: string;
@@ -29,8 +32,8 @@ export interface SignupRequest {
   lastName: string;
   email: string;
   password: string;
-  phone?: string;
-  role?: string;
+  phone: string[];
+  role: string;
   platform?: 'mobile' | 'web' | 'desktop';
   fcmToken?: FcmToken;
   enterprise?: string;
@@ -73,29 +76,7 @@ export interface ApiResponse<T = any> {
 }
 
 export const authService = {
-  signup: (data: SignupRequest) => mockAxiosResponse({}),
-  login: (data: LoginRequest) => mockAxiosResponse<LoginResponse>({
-    accessToken: 'mock_access_token',
-    user: {
-      id: 'mock_id_123',
-      email: data.email,
-      firstName: 'Super',
-      lastName: 'Admin',
-      role: 'superAdmin',
-      status: 'Active'
-    }
-  }),
-  me: () => mockAxiosResponse({ user: { id: 'mock_id_123', role: 'superAdmin' } }),
-  requestForgetPassword: (email: string) => mockAxiosResponse({}),
-  sendOTP: (email: string) => mockAxiosResponse({}),
-  forgotPassword: (email: string) => mockAxiosResponse({}),
-  resendOtp: (data: { email: string }) => mockAxiosResponse({}),
-  verifyOTP: (data: { email: string; otp: string }) => mockAxiosResponse({}),
-  resetPassword: (data: any) => mockAxiosResponse({}),
-  updatePassword: (data: any) => mockAxiosResponse({}),
-  forgetAccessCode: (data: any) => mockAxiosResponse({}),
-  accessCodeVerification: (data: any) => mockAxiosResponse({}),
-  accessCodeSearch: (data: any) => mockAxiosResponse([]),
-  validateCriticalFields: (data: any) => mockAxiosResponse({}),
-  validateAccessCode: () => mockAxiosResponse({}),
+  signup: (data: SignupRequest) => api.post('/auth/signup', data), 
+  login: (data: LoginRequest) => api.post('/auth/login', data),
+  me: () => api.get('/auth/me'),
 };

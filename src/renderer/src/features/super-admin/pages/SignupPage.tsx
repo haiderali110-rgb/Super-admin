@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, UserPlus } from 'lucide-react';
+import { Mail, Lock, User, UserPlus, Phone } from 'lucide-react';
 
 // Sahi import path aur service
 import { authService } from '../../super-admin/api/authService';
@@ -15,6 +15,7 @@ const SignupPage: React.FC = () => {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
 
   const getFcmPayload = () => ({
@@ -43,6 +44,8 @@ const SignupPage: React.FC = () => {
         lastName,
         email,
         password,
+        phone: [phone.replace(/\s/g, '')], // Server requires an array of strings
+        role: 'web-interpreter', // 'interpreter' was invalid; 'web-interpreter' is allowed
         platform: 'desktop',
         fcmToken: getFcmPayload()
       });
@@ -109,6 +112,20 @@ const SignupPage: React.FC = () => {
                   className="login-input"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="input-group">
+              <div className="input-with-icon">
+                <Phone className="field-icon" size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Phone Number (e.g. +923001234567)" 
+                  className="login-input"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   required
                 />
               </div>

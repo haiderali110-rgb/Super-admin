@@ -24,14 +24,15 @@ const LoginPage: React.FC = () => {
         email, password, platform: 'desktop', fcmToken: getFcmPayload(),
       });
       const data = response.data;
-      const authToken = data?.data?.accessToken || data?.accessToken || data?.token;
+      const nestedData = data?.data;
+      const authToken = nestedData?.accessToken || data?.accessToken || data?.token;
 
       if (authToken) {
         localStorage.setItem('beloz_auth_token', authToken);
-        if (data.chainToken || data.data?.chainToken) localStorage.setItem('beloz_chain_token', data.chainToken || data.data.chainToken);
-        if (data.user || data.data?.user) localStorage.setItem('beloz_auth_user', JSON.stringify(data.user || data.data.user));
+        if (data?.chainToken || nestedData?.chainToken) localStorage.setItem('beloz_chain_token', data?.chainToken || nestedData?.chainToken || '');
+        if (data?.user || nestedData?.user) localStorage.setItem('beloz_auth_user', JSON.stringify(data?.user || nestedData?.user));
         
-        if (data.verifyAccessCode || data.data?.verifyAccessCode) {
+        if (data?.verifyAccessCode || nestedData?.verifyAccessCode) {
           localStorage.setItem('beloz_pending_login_email', email);
           navigate('/verify-otp', { state: { flow: 'login', email } });
         } else {
